@@ -1,0 +1,42 @@
+{
+  "name": "@metatoy/sorb-seed",
+  "version": "0.1.0",
+  "description": "Storybook → Figma capture for Sorb: headless capture + the resolved bindable token map. Heavy deps (esbuild, later Playwright) live here so the bridge stays lean.",
+  "license": "MIT",
+  "keywords": [
+    "sorb",
+    "design-tokens",
+    "figma",
+    "storybook",
+    "tokens"
+  ],
+  "homepage": "https://github.com/metatoy/sorb-seed#readme",
+  "bugs": "https://github.com/metatoy/sorb-seed/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/metatoy/sorb-seed.git"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "sorb-seed": "src/cli.js"
+  },
+  "files": [
+    "src"
+  ],
+  "dependencies": {
+    "@metatoy/sorb-core": "^0.1.0",
+    "esbuild": "^0.21.0"
+  },
+  "peerDependencies": {
+    "playwright": "^1.60.0"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  }
+}
