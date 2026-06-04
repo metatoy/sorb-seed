@@ -1,5 +1,5 @@
 {
-  "name": "@metatoy/sorb-seed",
+  "name": "@sorb/seed",
   "version": "0.1.0",
   "description": "Storybook → Figma capture for Sorb: headless capture + the resolved bindable token map. Heavy deps (esbuild, later Playwright) live here so the bridge stays lean.",
   "license": "MIT",
@@ -28,7 +28,7 @@
     "src"
   ],
   "dependencies": {
-    "@metatoy/sorb-core": "^0.1.0",
+    "@sorb/core": "^0.1.0",
     "esbuild": "^0.21.0"
   },
   "peerDependencies": {

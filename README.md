@@ -1,15 +1,15 @@
-# @metatoy/sorb-seed
+# @sorb/seed
 
 Storybook → Figma capture for Sorb. This package holds the **heavy**
-pieces (esbuild now; Playwright later) so the bridge (`@metatoy/sorb-juice`)
-and `@metatoy/sorb-leaf` stay lean.
+pieces (esbuild now; Playwright later) so the bridge (`@sorb/juice`)
+and `@sorb/leaf` stay lean.
 
 The full design lives in the team's internal spec (kept out of the repo).
 
 ## Install & link the CLI
 
 This package is **private / not published to npm yet**, so there's no
-`npm i @metatoy/sorb-seed`. To get the `sorb-seed` command working:
+`npm i @sorb/seed`. To get the `sorb-seed` command working:
 
 ```bash
 # 1. install this package's deps (from this directory)
@@ -21,7 +21,7 @@ npm link                    # creates a global symlink to bin → src/cli.js
 ```
 
 `sorb-seed` is now runnable from anywhere. To remove the global symlink
-later: `npm unlink -g @metatoy/sorb-seed` (or `npm rm -g @metatoy/sorb-seed`).
+later: `npm unlink -g @sorb/seed` (or `npm rm -g @sorb/seed`).
 
 **Prefer not to touch your global PATH?** Skip `npm link` and invoke the source
 directly from the consuming app:

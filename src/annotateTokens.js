@@ -1,4 +1,4 @@
-import { TIER_RANK } from '@metatoy/sorb-core'
+import { TIER_RANK } from '@sorb/core'
 
 // Token annotation for captured layer values.
 //
@@ -69,7 +69,7 @@ export const buildTokenIndex = (resolved) => {
 // text fill a `text`, a corner radius a `radius`. We filter candidates to that
 // role, then break remaining ties by tier (component > semantic > primitive).
 // If no candidate carries the role, fall back to the full set (tier-only).
-// TIER_RANK is the canonical ordering from @metatoy/sorb-core (shared contract).
+// TIER_RANK is the canonical ordering from @sorb/core (shared contract).
 
 // role → the path segment a matching token id should contain (`.bg`, `.text`,
 // `.border`, `.radius`). Matched on `.<role>` so `color.bg.surface`,

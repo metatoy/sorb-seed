@@ -6,7 +6,7 @@ Part of the **Sorb** polyrepo under the **Metatoy** org (local base
 
 ## What this is
 
-`@metatoy/sorb-seed` — Storybook → Figma capture. Headless capture (Playwright,
+`@sorb/seed` — Storybook → Figma capture. Headless capture (Playwright,
 optional peer) + the resolved bindable token map and the `annotateTokens` binder
 that stamps `node.sorb = { tokens, candidates }` onto captured layer nodes. Bin:
 **`sorb-seed <resolve|capture>`**. Heavy deps live here so the bridge stays lean.
@@ -14,9 +14,9 @@ that stamps `node.sorb = { tokens, candidates }` onto captured layer nodes. Bin:
 ## Hard rules
 
 - **JavaScript only — never TypeScript.** JSDoc typedefs; shared shapes come from
-  `@metatoy/sorb-core` (e.g. `TIER_RANK` in `annotateTokens.js`).
+  `@sorb/core` (e.g. `TIER_RANK` in `annotateTokens.js`).
 - **Per-repo lockfile is correct** (polyrepo). Cross-repo dev: `npm link
-  @metatoy/sorb-core` against the sibling `../sorb-core`.
+  @sorb/core` against the sibling `../sorb-core`.
 - Capture writes to **`.sorb/`** (`resolved.json`, `index.json`, `*.sorb.json`
   artifacts) — gitignored generated output.
 - **Commit/push only when asked.** If on the default branch, branch first.

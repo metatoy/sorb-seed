@@ -1,4 +1,4 @@
-// Public library surface for @metatoy/sorb-seed.
+// Public library surface for @sorb/seed.
 //
 // The resolved bindable token map is now produced by Style Dictionary (see
 // `sorb-seed resolve`, a thin SD wrapper), not by scraping a theme module —
