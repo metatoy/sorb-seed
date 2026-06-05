@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          # no `cache: npm` — polyrepo, no committed lockfile; cache errors without one.
+      # Resolves @sorb/core from npm (published) — proves seed builds without the workspace.
+      - run: npm install
+      - run: find src -name '*.js' -exec node --check {} +
