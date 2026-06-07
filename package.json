@@ -1,6 +1,6 @@
 {
   "name": "@sorb/seed",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Storybook → Figma capture for Sorb: headless capture + the resolved bindable token map. Heavy deps (esbuild, later Playwright) live here so the bridge stays lean.",
   "license": "MIT",
   "keywords": [
