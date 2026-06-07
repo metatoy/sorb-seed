@@ -201,6 +201,106 @@ export const captureNode = (el, parentRect) => {
 /** Entry point: capture a root element with itself at the origin (0,0). */
 export const captureRoot = (el) => captureNode(el, el.getBoundingClientRect())
 
+// ─── Capture root trim (sorb-capture-trim-spec.md) ──────────────────────────
+// Storybook wraps each story in full-width padded divs, so a raw captured root
+// is the story container (e.g. 1248×86) with the real component (button 82×38)
+// nested at an offset inside empty wrappers. `tightenRoot` trims the tree to the
+// meaningful component AT CAPTURE TIME so every consumer (insert, preview, label
+// wrapper) gets a tight, token-bound node. Pure + annotation-safe: it runs in
+// captureCli BEFORE annotateTree, and only drops un-annotated, non-visual
+// wrappers, so token bindings on the kept subtree are untouched.
+
+/**
+ * "Content-bearing" = the node, or any descendant, paints (a non-transparent
+ * fill or a stroke) or is TEXT. Same notion as the preview SVG walker.
+ * @param {object} node LayerNode
+ * @returns {boolean}
+ */
+export const hasContent = (node) => {
+  if (!node) return false
+  if (node.type === 'TEXT') return true
+  if ((node.fills && node.fills[0]) || (node.strokes && node.strokes[0])) return true
+  return (node.children || []).some(hasContent)
+}
+
+/** A node that ITSELF paints (own fill/stroke) or is TEXT — vs a transparent wrapper. */
+const selfPaints = (node) =>
+  node.type === 'TEXT' || !!(node.fills && node.fills[0]) || !!(node.strokes && node.strokes[0])
+
+/**
+ * Union of the rects of all self-painting (or TEXT) nodes in `node`'s subtree,
+ * expressed in `node`'s LOCAL coordinate space (node's own origin = 0,0).
+ * Returns null when nothing in the subtree paints. Children carry offsets
+ * relative to their parent, so the walk accumulates them; negative/overflow
+ * offsets are included (the union never clips content).
+ * @param {object} node
+ * @returns {{minX:number,minY:number,maxX:number,maxY:number}|null}
+ */
+export const contentBBox = (node) => {
+  let box = null
+  const acc = (n, ox, oy) => {
+    if (!n) return
+    if (selfPaints(n)) {
+      const x1 = ox + (n.width || 0)
+      const y1 = oy + (n.height || 0)
+      if (box === null) box = { minX: ox, minY: oy, maxX: x1, maxY: y1 }
+      else {
+        if (ox < box.minX) box.minX = ox
+        if (oy < box.minY) box.minY = oy
+        if (x1 > box.maxX) box.maxX = x1
+        if (y1 > box.maxY) box.maxY = y1
+      }
+    }
+    for (const c of n.children || []) acc(c, ox + (c.x || 0), oy + (c.y || 0))
+  }
+  acc(node, 0, 0)
+  return box
+}
+
+/**
+ * Trim a captured root to its meaningful component:
+ *  1) descend through pure pass-through wrappers (a single content-bearing,
+ *     non-TEXT child, and no paint of their own),
+ *  2) crop the kept node to its content bounding box and normalize direct-child
+ *     offsets so content sits at the origin.
+ * Mutates the kept node's geometry in step 2 and returns it. See
+ * sorb-capture-trim-spec.md §3.
+ * @param {object} root LayerNode
+ * @returns {object} the tightened node
+ */
+export const tightenRoot = (root) => {
+  if (!root) return root
+  let node = root
+  // 1) descend through pure pass-through wrappers
+  while (true) {
+    const selfVisual = (node.fills && node.fills[0]) || (node.strokes && node.strokes[0])
+    if (selfVisual) break // node paints something → keep it
+    const kids = (node.children || []).filter(hasContent)
+    // unwrap a sole content-bearing child UNLESS it is TEXT (the wrapper carries
+    // the component's frame; don't descend into raw text). Multiple content kids
+    // (e.g. a variant row) → stop here.
+    if (kids.length === 1 && kids[0].type !== 'TEXT') {
+      node = kids[0]
+      continue
+    }
+    break
+  }
+  // 2) crop node to the bbox of its content (local coords)
+  const bbox = contentBBox(node)
+  if (bbox === null) return node // nothing drawn → leave as-is
+  const dx = bbox.minX
+  const dy = bbox.minY
+  for (const child of node.children || []) {
+    child.x = (child.x || 0) - dx
+    child.y = (child.y || 0) - dy
+  }
+  node.x = 0
+  node.y = 0
+  node.width = bbox.maxX - bbox.minX
+  node.height = bbox.maxY - bbox.minY
+  return node
+}
+
 // Install the walker on `window` so it can be called from a Playwright
 // page.evaluate(() => window.__sorbCapture(...)) after this module is
 // bundled and injected via addInitScript. No-op in Node tests.
