@@ -7,6 +7,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { createHash } from 'crypto'
 import { dirname, resolve, basename, extname } from 'path'
 import { build } from 'esbuild'
+import { tightenRoot } from './capture.js'
 import { buildTokenIndex, annotateTree } from './annotateTokens.js'
 
 // Playwright is an OPTIONAL peer dep — only `capture` needs it, and it pulls a
@@ -159,7 +160,12 @@ export const runCapture = async (opts) => {
         await page.close()
         continue
       }
-      const tree = annotateTree(rawTree, index)
+      // Trim the story container down to the meaningful component BEFORE
+      // annotation/storage so insert + preview get a tight, token-bound node
+      // (sorb-capture-trim-spec.md). Annotation runs on the kept subtree, so
+      // token bindings are unaffected.
+      const tightened = tightenRoot(rawTree)
+      const tree = annotateTree(tightened, index)
       const hash = 'sha256:' + sha256(JSON.stringify(tree))
 
       // --changed: reuse the previous artifact if hash matches
