@@ -1,0 +1,10 @@
+{
+  "name": "button-inline",
+  "source": "export const B = () => <button style={{ backgroundColor: '#0f65ef', color: '#757575', borderColor: '#083884', borderRadius: 4 }}>x</button>",
+  "expected": {
+    "#0f65ef": "button.primary.bg.default",
+    "#757575": "color.text.secondary",
+    "#083884": "button.primary.border.hover",
+    "4": "button.radius"
+  }
+}
