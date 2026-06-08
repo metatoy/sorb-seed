@@ -53,7 +53,19 @@ if (cmd === 'resolve') {
     else if (a.startsWith('--storybook-url=')) opts.storybookUrl = a.slice('--storybook-url='.length)
   }
   await runCapture(opts)
+} else if (cmd === 'adapt') {
+  // Legacy-React adapter (roadmap §6): detect hardcoded styles → map to the
+  // nearest resolved token → scored report / runtime-shim payload / codemod.
+  const { runAdaptCli } = await import('./adapt/adaptCli.js')
+  await runAdaptCli(process.argv.slice(3), cwd)
 } else {
-  console.error(`Unknown command: ${cmd}\nUsage: sorb-seed <resolve|capture> [options]`)
+  console.error(
+    `Unknown command: ${cmd}\n` +
+    `Usage: sorb-seed <resolve|capture|adapt> [options]\n` +
+    `  resolve                 build .sorb/resolved.json from DTCG sources (Style Dictionary)\n` +
+    `  capture [--changed]     headless Storybook → Figma capture\n` +
+    `  adapt   [--src <glob>] [--resolved <path>] [--mode report|shim|codemod] [--write]\n` +
+    `          detect hardcoded styles in a legacy React app and map them to tokens`,
+  )
   process.exit(1)
 }
