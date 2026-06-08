@@ -100,7 +100,8 @@ test('runAdapt shim mode: emits a legacyMap of the auto set', async () => {
     assert.equal(res.mode, 'shim')
     assert.ok(res.legacyMap.length >= 2)
     for (const e of res.legacyMap) {
-      assert.ok(e.raw && e.cssVar && e.tokenId)
+      // Contract with @sorb/leaf applyLegacyMap: rows MUST carry prop (it skips rows without it).
+      assert.ok(e.raw && e.prop && e.cssVar && e.tokenId)
     }
   } finally {
     rmSync(cwd, { recursive: true, force: true })
