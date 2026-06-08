@@ -74,7 +74,7 @@ export async function runAdapt(opts, cwd) {
     const reportPath = writeReport(rows, cwd)
     const legacyMap = rows
       .filter((r) => r.status === 'auto')
-      .map((r) => ({ raw: r.raw, cssVar: r.cssVar, tokenId: r.tokenId }))
+      .map((r) => ({ raw: r.raw, prop: r.prop, cssVar: r.cssVar, tokenId: r.tokenId }))
     return { ok: true, mode: 'shim', rows, summary, files: files.length, reportPath, legacyMap }
   }
 
