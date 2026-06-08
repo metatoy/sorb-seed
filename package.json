@@ -21,6 +21,9 @@
   },
   "type": "module",
   "main": "src/index.js",
+  "scripts": {
+    "test": "node --test src/"
+  },
   "bin": {
     "sorb-seed": "src/cli.js"
   },
