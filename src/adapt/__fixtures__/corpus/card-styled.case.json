@@ -1,0 +1,9 @@
+{
+  "name": "card-styled",
+  "source": "const Card = styled.div`\n  background: #f4f4f4;\n  border-radius: 8px;\n  color: #083884;\n`",
+  "expected": {
+    "#f4f4f4": "color.gray.50",
+    "8px": "radius.300",
+    "#083884": "button.outline.text.hover"
+  }
+}

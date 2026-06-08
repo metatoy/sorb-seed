@@ -1,0 +1,7 @@
+{
+  "name": "misc-unmapped",
+  "source": "export const X = () => <div style={{ backgroundColor: '#0f65ef', color: '#abcdef' }}>x</div>",
+  "expected": {
+    "#0f65ef": "button.primary.bg.default"
+  }
+}
