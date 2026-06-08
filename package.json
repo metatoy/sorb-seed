@@ -22,7 +22,8 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "test": "node --test src/"
+    "test": "node --test src/",
+    "bench": "node src/adapt/runBenchmark.js"
   },
   "bin": {
     "sorb-seed": "src/cli.js"
@@ -31,6 +32,9 @@
     "src"
   ],
   "dependencies": {
+    "@babel/generator": "^7.29.7",
+    "@babel/parser": "^7.29.7",
+    "@babel/traverse": "^7.29.7",
     "@sorb/core": "^0.2.0",
     "esbuild": "^0.21.0"
   },
