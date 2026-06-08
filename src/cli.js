@@ -235,7 +235,22 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
     process.exit(1)
   }
 
+} else if (cmd === 'adapt') {
+  // Legacy-React adapter (roadmap §6): detect hardcoded styles → map to the
+  // nearest resolved token → scored report / runtime-shim payload / codemod.
+  const { runAdaptCli } = await import('./adapt/adaptCli.js')
+  await runAdaptCli(process.argv.slice(3), cwd)
 } else {
-  console.error(`Unknown command: ${cmd}\nUsage: sorb-seed <resolve|capture|render-worker|variant> [options]\nRun \`sorb-seed --help\` for details.`)
+  console.error(
+    `Unknown command: ${cmd}\n` +
+    `Usage: sorb-seed <resolve|capture|render-worker|variant|adapt> [options]\n` +
+    `  resolve                 build .sorb/resolved.json from DTCG sources (Style Dictionary)\n` +
+    `  capture [--changed]     headless Storybook → Figma capture\n` +
+    `  render-worker           internal render worker (variant preview rendering)\n` +
+    `  variant <add|deprecate> manage component variants\n` +
+    `  adapt   [--src <glob>] [--resolved <path>] [--mode report|shim|codemod] [--write]\n` +
+    `          detect hardcoded styles in a legacy React app and map them to tokens\n` +
+    `Run \`sorb-seed --help\` for details.`,
+  )
   process.exit(1)
 }
