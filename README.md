@@ -1,8 +1,9 @@
 # @sorb/seed
 
-Storybook → Figma capture for Sorb. This package holds the **heavy**
-pieces (esbuild now; Playwright later) so the bridge (`@sorb/juice`)
-and `@sorb/leaf` stay lean.
+Storybook→Figma capture for Sorb, the design-token bridge for your running app. (Seed.)
+
+This package holds the **heavy** pieces (esbuild now; Playwright later)
+so the bridge (`@sorb/juice`) and `@sorb/leaf` stay lean.
 
 The full design lives in the team's internal spec (kept out of the repo).
 
