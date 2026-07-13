@@ -27,6 +27,27 @@ const loadChromium = async () => {
   }
 }
 
+// The `playwright` PACKAGE can be installed while its Chromium BROWSER binary is
+// not (that's a separate `npx playwright install chromium` step). Launching then
+// throws a raw "Executable doesn't exist" error — turn it into the same
+// actionable guidance the missing-package path already gives.
+export const launchChromium = async (chromium) => {
+  try {
+    return await chromium.launch()
+  } catch (e) {
+    const msg = e && e.message ? e.message : String(e)
+    if (/Executable doesn't exist|playwright install|browserType\.launch/i.test(msg)) {
+      console.error(
+        '✗ `sorb-seed capture` found Playwright but its Chromium browser is not installed.\n' +
+          '  Install the browser where you run capture:\n' +
+          '    npx playwright install chromium',
+      )
+      process.exit(1)
+    }
+    throw e
+  }
+}
+
 const cwd = process.cwd()
 
 const loadConfig = () => {
@@ -127,7 +148,7 @@ export const runCapture = async (opts) => {
   // 2. Browser setup + walker injection
   const chromium = await loadChromium()
   const walker = await buildWalkerBundle()
-  const browser = await chromium.launch()
+  const browser = await launchChromium(chromium)
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } })
   await ctx.addInitScript({ content: walker })
 
