@@ -14,6 +14,13 @@ jobs:
         with:
           node-version: 20
           # no `cache: npm` — polyrepo, no committed lockfile; cache errors without one.
-      # Resolves @sorb/core from npm (published) — proves seed builds without the workspace.
-      - run: npm install
+      # Resolves @sorb/core from npm (published) — proves seed installs without the workspace.
+      - run: npm install --no-audit --no-fund
+      # Syntax gate (kept from the original workflow).
       - run: find src -name '*.js' -exec node --check {} +
+      # Unit/smoke suite: resolve + capture logic (tightenRoot / annotateTokens /
+      # color+dim+shadow parsers). The LIVE `sorb-seed capture` Playwright path
+      # (needs a chromium browser + a running Storybook + the bridge) is NOT
+      # exercised here — it runs in the cross-repo E2E free-loop job (see
+      # sorb-demo/.github/workflows/e2e-freeloop.yml). Runs `node --test src/`.
+      - run: npm test

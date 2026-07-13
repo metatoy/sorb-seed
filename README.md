@@ -14,7 +14,7 @@ This package is **private / not published to npm yet**, so there's no
 
 ```bash
 # 1. install this package's deps (from this directory)
-cd packages/seed
+cd sorb-seed
 npm install                 # pulls esbuild (Playwright is optional — see capture)
 
 # 2. expose the `sorb-seed` bin on your PATH
@@ -28,8 +28,13 @@ later: `npm unlink -g @sorb/seed` (or `npm rm -g @sorb/seed`).
 directly from the consuming app:
 
 ```bash
-node /abs/path/to/sorb/packages/seed/src/cli.js resolve
+node /abs/path/to/sorb-seed/src/cli.js resolve
 ```
+
+The CLI has exactly two commands — **`resolve`** and **`capture`** — plus
+`sorb-seed --help` / `-h` (usage) and `sorb-seed --version` / `-v`. (There is
+**no** `annotate` command: `annotateTree`/`annotateTokens` is the internal
+binder `capture` calls, not a CLI verb.)
 
 > **Where you run it matters.** `sorb-seed` reads `sorb.config.json`,
 > `sd.config.js`, and `tokens/` from the **current working directory** — i.e.
