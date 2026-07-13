@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { readFileSync, existsSync } from 'fs'
-import { resolve } from 'path'
+import { resolve, dirname } from 'path'
 import { execSync } from 'child_process'
 
 // sorb-seed — Storybook → Figma capture tooling.
@@ -25,7 +25,48 @@ const loadConfig = () => {
 
 const cmd = process.argv[2] || 'resolve'
 
-if (cmd === 'resolve') {
+const pkgVersion = () => {
+  try {
+    const pkgPath = resolve(dirname(new URL(import.meta.url).pathname), '..', 'package.json')
+    return JSON.parse(readFileSync(pkgPath, 'utf-8')).version
+  } catch (e) {
+    return '0.0.0'
+  }
+}
+
+const HELP = `sorb-seed — Storybook → Figma token capture for Sorb.
+
+Usage: sorb-seed <command> [options]
+
+Commands:
+  resolve            Build .sorb/resolved.json from your DTCG token sets via
+                     Style Dictionary (the default when no command is given).
+  capture            Visit each Storybook story with Playwright, capture the
+                     rendered tree, and annotate it against the resolved token
+                     map → per-component *.sorb.json + .sorb/index.json.
+
+capture options:
+  --changed          Only re-capture stories whose rendered hash changed.
+  --only=<pattern>   Capture only stories matching the glob/regex (matched
+                     against importPath, title, and id).
+  --storybook-url=<url>
+                     Storybook base URL (default: sorb.config.json seed.storybookUrl
+                     or http://localhost:6006).
+
+Global:
+  -h, --help         Show this help and exit.
+  -v, --version      Print the sorb-seed version and exit.
+
+capture needs Playwright + its Chromium browser:
+  npm install playwright && npx playwright install chromium`
+
+if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
+  console.log(HELP)
+  process.exit(0)
+} else if (cmd === '--version' || cmd === '-v') {
+  console.log(pkgVersion())
+  process.exit(0)
+} else if (cmd === 'resolve') {
   const config = loadConfig()
   const sdConfig = config.styleDictionaryConfig || 'sd.config.js'
   const abs = resolve(cwd, sdConfig)
@@ -54,6 +95,6 @@ if (cmd === 'resolve') {
   }
   await runCapture(opts)
 } else {
-  console.error(`Unknown command: ${cmd}\nUsage: sorb-seed <resolve|capture> [options]`)
+  console.error(`Unknown command: ${cmd}\nUsage: sorb-seed <resolve|capture> [options]\nRun \`sorb-seed --help\` for details.`)
   process.exit(1)
 }
