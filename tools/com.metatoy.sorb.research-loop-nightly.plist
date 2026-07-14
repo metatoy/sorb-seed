@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- launchd agent: nightly SORB learning-loop seed-robustness sweep.
+     Install: cp to ~/Library/LaunchAgents/ then `launchctl load -w <path>`.
+     Uninstall: `launchctl unload -w ~/Library/LaunchAgents/com.metatoy.sorb.research-loop-nightly.plist`.
+     Machine-specific (absolute paths for this workstation). -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.metatoy.sorb.research-loop-nightly</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/nobrien/workspace/metatoy/sorb-seed/tools/nightly-research-loop.sh</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>2</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>StandardOutPath</key>
+  <string>/Users/nobrien/workspace/metatoy/sorb-seed/.sorb/nightly-logs/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/nobrien/workspace/metatoy/sorb-seed/.sorb/nightly-logs/launchd.err.log</string>
+</dict>
+</plist>

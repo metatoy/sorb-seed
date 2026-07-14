@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { runBlend } from './runBlend.js'
+import { runBlend, nightly, dateSeedOf } from './runBlend.js'
 import { PRECISION_FLOOR } from './loop.js'
 
 const COLORS = ['#ffffff', '#000000', '#4a4a4a', '#757575', '#8b7e66', '#c5c5c5', '#d1d1d1', '#e7f0fd', '#0f65ef', '#083884', '#f26722']
@@ -20,4 +20,25 @@ test('runBlend: reaches the site target within budget and ends feasible with 0 c
   assert.ok(r.loop.final.coverage >= r.loop.baseline.coverage, 'coverage never regresses')
   // the scale schedule doubled synthetic N at least once
   assert.ok(r.scaleLog.length >= 2)
+})
+
+test('nightly: fresh per-date seed holds the loop invariants and is deterministic per date', () => {
+  const opts = { ossRoots: [], dateSeed: 20260714, targetSites: 2000 }
+  const a = nightly(RESOLVED, opts)
+  const b = nightly(RESOLVED, opts)
+  assert.equal(JSON.stringify(a.row.final), JSON.stringify(b.row.final), 'same date → identical result')
+  // a different date rotates the seed → an independent corpus
+  const c = nightly(RESOLVED, { ossRoots: [], dateSeed: 20261225, targetSites: 2000 })
+  assert.notEqual(c.row.seed, a.row.seed, 'date rotates the seed')
+  // invariants hold on every independent corpus (the production 0.95 guard is
+  // validated on the full token map, not this minimal fixture)
+  for (const r of [a, c]) {
+    assert.ok(r.row.final.precision >= PRECISION_FLOOR - 1e-9, 'final feasible')
+    assert.ok(r.row.final.coverage >= r.row.baseline.coverage - 1e-9, 'coverage never regresses')
+    assert.ok(typeof r.pass === 'boolean')
+  }
+})
+
+test('dateSeedOf: UTC YYYYMMDD integer', () => {
+  assert.equal(dateSeedOf(new Date('2026-07-14T09:00:00Z')), 20260714)
 })

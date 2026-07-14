@@ -5,7 +5,7 @@
 //
 // Manual-first (founder directive): invoked by hand; nightly cron added only
 // after a clean run. `node src/research/runBlend.js [artifactDir]`.
-import { readFileSync, writeFileSync, mkdirSync } from 'fs'
+import { readFileSync, writeFileSync, mkdirSync, appendFileSync } from 'fs'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import { execSync } from 'child_process'
@@ -22,10 +22,13 @@ const FOUR_HOURS = 4 * 3600 * 1000
 export const SEED = 1425443
 export const SPLIT_SEED = 0xc0ffee
 
-/** Build the blend: scaled synthetic + injected real-OSS source. */
+/** Build the blend: scaled synthetic + injected real-OSS source. Seeds default
+ *  to the frozen constants; the nightly sweep overrides them per-date. */
 export function buildBlend(resolved, o) {
-  const synth = buildCorpus(resolved, { seed: SEED, n: o.syntheticN, splitSeed: SPLIT_SEED })
-  const oss = buildOssCorpus(o.ossRoots, resolved, { seed: SEED, splitSeed: SPLIT_SEED, maxPerFile: o.maxPerFile || 6, repeats: o.ossRepeats || 8 })
+  const seed = o.seed == null ? SEED : o.seed
+  const splitSeed = o.splitSeed == null ? SPLIT_SEED : o.splitSeed
+  const synth = buildCorpus(resolved, { seed, n: o.syntheticN, splitSeed })
+  const oss = buildOssCorpus(o.ossRoots || [], resolved, { seed, splitSeed, maxPerFile: o.maxPerFile || 6, repeats: o.ossRepeats || 8 })
   return synth.concat(oss)
 }
 
@@ -102,6 +105,53 @@ export function summarize(r, meta) {
   return L.join('\n')
 }
 
+// Regression guard thresholds — the nightly FAILS (regression) if the frozen
+// protocol stops reaching its designed outcome on a fresh independently-seeded
+// corpus. These encode "the result is not a seed artifact."
+export const GUARD = { coverageMin: 0.95, precisionMin: 0.99, contrastFNMax: 0 }
+
+/** 8-digit YYYYMMDD → int, for a deterministic per-date seed. */
+export const dateSeedOf = (d) => Number(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`)
+
+/**
+ * One nightly seed-robustness run: a FRESH independently-seeded corpus (derived
+ * from the date), the FROZEN protocol, a regression check, a ledger row. This
+ * is distinct from the canonical frozen-seed artifact — it proves the result
+ * holds across corpora, it does not replace the citable number.
+ * @param {import('@sorb/core').ResolvedToken[]} resolved
+ * @param {{ossRoots:string[], dateSeed:number, targetSites?:number, sha?:string, stamp?:string}} o
+ */
+export function nightly(resolved, o) {
+  const seed = (SEED ^ o.dateSeed) >>> 0
+  const splitSeed = (SPLIT_SEED ^ o.dateSeed) >>> 0
+  const r = runBlend(resolved, { ossRoots: o.ossRoots, targetSites: o.targetSites == null ? 3000 : o.targetSites, seed, splitSeed })
+  const f = r.loop.final
+  const pass = !r.degraded && f.coverage >= GUARD.coverageMin && f.precision >= GUARD.precisionMin && f.contrastFN <= GUARD.contrastFNMax
+  const row = {
+    date: o.dateSeed,
+    stamp: o.stamp || null,
+    sha: o.sha || null,
+    seed,
+    splitSeed,
+    sites: r.stats.sites,
+    baseline: { coverage: r.loop.baseline.coverage, precision: r.loop.baseline.precision },
+    final: { coverage: f.coverage, precision: f.precision, contrastFN: f.contrastFN },
+    accepted: Object.keys(r.loop.enabled),
+    stoppedBy: r.loop.stoppedBy,
+    degraded: r.degraded,
+    elapsedMs: r.elapsedMs,
+    pass,
+  }
+  return { pass, row, r }
+}
+
+/** Append a nightly row to the JSONL ledger (created if absent). */
+export function appendLedger(ledgerPath, row) {
+  mkdirSync(dirname(ledgerPath), { recursive: true })
+  appendFileSync(ledgerPath, JSON.stringify(row) + '\n')
+  return ledgerPath
+}
+
 /** Write the citable artifact (M5). Returns the dir written. */
 export function writeArtifact(r, resolved, meta, outDir) {
   mkdirSync(outDir, { recursive: true })
@@ -118,7 +168,24 @@ if (isMain) {
   const resolvedRef = '../sorb-demo/.sorb/resolved.json'
   const resolvedPath = resolve(here, '..', '..', resolvedRef)
   const resolved = JSON.parse(readFileSync(resolvedPath, 'utf-8'))
-  const r = runBlend(resolved, { ossRoots: [resolve(here, '..', '..', '..', 'sorb-demo', 'src'), resolve(here, '..', '..', '..', 'sorb-demo', 'stories')], targetSites: 3000 })
+  const ossRoots = [resolve(here, '..', '..', '..', 'sorb-demo', 'src'), resolve(here, '..', '..', '..', 'sorb-demo', 'stories')]
+  const artifactDir = resolve(here, '..', '..', '..', 'spec', 'metatoy-studio', 'llc', 'funding', 'nsf-sbir-run-2026-07', 'artifacts', 'research-loop-poc')
+
+  if (process.argv.includes('--nightly')) {
+    // Seed-robustness sweep: fresh per-date corpus, frozen protocol, ledger row.
+    const now = new Date()
+    const dateSeed = dateSeedOf(now)
+    const { pass, row } = nightly(resolved, { ossRoots, dateSeed, sha: gitSha(), stamp: now.toISOString() })
+    const ledger = appendLedger(join(artifactDir, 'nightly-ledger.jsonl'), row)
+    const c = (row.final.coverage * 100).toFixed(1)
+    const p = (row.final.precision * 100).toFixed(1)
+    console.log(`[nightly ${row.stamp}] seed=${row.seed} sites=${row.sites} final coverage ${c}% precision ${p}% contrastFN ${(row.final.contrastFN * 100).toFixed(0)}% → ${pass ? 'PASS' : 'REGRESSION'}`)
+    console.log(`ledger → ${ledger}`)
+    process.exit(pass ? 0 : 1)
+  }
+
+  // Canonical frozen-seed run + citable artifact.
+  const r = runBlend(resolved, { ossRoots, targetSites: 3000 })
   const meta = {
     stamp: new Date().toISOString(),
     branch: (() => { try { return execSync('git rev-parse --abbrev-ref HEAD', { cwd: here, stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch (e) { return 'unknown' } })(),
@@ -127,7 +194,6 @@ if (isMain) {
     tokenCount: resolved.length,
   }
   console.log(summarize(r, meta))
-  const outDir = process.argv[2] || resolve(here, '..', '..', '..', 'spec', 'metatoy-studio', 'llc', 'funding', 'nsf-sbir-run-2026-07', 'artifacts', 'research-loop-poc')
-  const written = writeArtifact(r, resolved, meta, outDir)
+  const written = writeArtifact(r, resolved, meta, process.argv[2] || artifactDir)
   console.log(`\nartifact → ${written}`)
 }
