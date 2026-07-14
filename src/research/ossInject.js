@@ -118,8 +118,23 @@ export function injectFile(name, source, rng, pal, o = {}) {
         const ratio = contrastRatio(fg, bg)
         Object.assign(label, { class: 'contrast-break', causalEdit: 'contrast', isDrift: true, contrast: { fg, bg, ratio: ratio == null ? 0 : ratio, threshold: AA_NORMAL, violates: violatesAA(fg, bg) === true, tokenValued: pal.colorValues.has(fg) } })
       } else if (accurate && r < 0.55) {
-        next = tok.value
-        Object.assign(label, { class: 'benign', causalEdit: 'inline', isDrift: false })
+        // benign-exact: a token value that binds cleanly. For a TEXT site with a
+        // known bg, it must ALSO pass contrast, or it isn't unambiguously benign
+        // (a value can bind AND fail contrast — that would be a false-positive
+        // source for the oracle). Pick a token color that passes AA vs the bg.
+        if (site.role === 'text' && bg) {
+          const passing = pal.colors.find((h) => h !== bg && violatesAA(h, bg) === false)
+          if (passing) {
+            next = passing
+            Object.assign(label, { class: 'benign', causalEdit: 'inline', isDrift: false })
+          } else {
+            next = uniquePerturb(tok.value) // no passing token → make it a drift instead
+            if (next) Object.assign(label, { class: 'stale-value', causalEdit: 'stale', isDrift: true })
+          }
+        } else {
+          next = tok.value
+          Object.assign(label, { class: 'benign', causalEdit: 'inline', isDrift: false })
+        }
       } else {
         next = uniquePerturb(tok.value) // stale-value (unique → locatable in either idiom)
         if (next) Object.assign(label, { class: 'stale-value', causalEdit: rng() < 0.5 ? 'stale' : 'rename', isDrift: true })
