@@ -93,11 +93,14 @@ export function classifyComponent(source, filename, index, resolved, opts = {}) 
   })
 }
 
-/** Match predictions to labels by role (roles are unique per synthetic component). */
-function pairByRole(preds, labels) {
+/** Match predictions to labels by source location (general: works for real
+ *  multi-site files where roles are not unique). Falls back to role. */
+function pairByLoc(preds, labels) {
+  const key = (x) => `${x.loc.line}:${x.loc.column}`
+  const byKey = new Map(preds.map((p) => [key(p), p]))
   const out = []
   for (const l of labels) {
-    const p = preds.find((x) => x.role === l.role)
+    const p = byKey.get(key(l)) || preds.find((x) => x.role === l.role && x.raw === l.raw)
     if (p) out.push({ label: l, pred: p })
   }
   return out
@@ -115,7 +118,7 @@ export function scoreSplit(cases, index, resolved, opts) {
   let cbTotal = 0, cbCaughtByOracle = 0
   for (const c of cases) {
     const preds = classifyComponent(c.source, c.name, index, resolved, opts)
-    for (const { label, pred } of pairByRole(preds, c.labels)) {
+    for (const { label, pred } of pairByLoc(preds, c.labels)) {
       if (label.isDrift && pred.predDrift) tp++
       else if (label.isDrift && !pred.predDrift) fn++
       else if (!label.isDrift && pred.predDrift) fp++
