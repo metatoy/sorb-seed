@@ -14,6 +14,8 @@ import { buildOssCorpus } from './ossInject.js'
 import { buildTokenIndex } from '../annotateTokens.js'
 import { runLoop, formatLoop } from './loop.js'
 import { scoreCorpus, fmtSplit } from './score.js'
+import { runRemediation } from './remediate.js'
+import { mulberry32 } from './prng.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const FOUR_HOURS = 4 * 3600 * 1000
@@ -65,7 +67,14 @@ export function runBlend(resolved, o) {
     synthetic: { n: synthCases.length, baseline: scoreCorpus(synthCases, index, resolved, {}).test, final: scoreCorpus(synthCases, index, resolved, loop.enabled).test },
     oss: { n: ossCases.length, baseline: scoreCorpus(ossCases, index, resolved, {}).test, final: scoreCorpus(ossCases, index, resolved, loop.enabled).test },
   }
-  return { stats, loop, perSource, scaleLog, elapsedMs: Date.now() - t0, finalSyntheticN: n, degraded, target, budget }
+  // Objective-2 preview: oracle-gated remediation over the corpus's checkable drift.
+  const remPal = {
+    colors: resolved.filter((t) => t.type === 'color' && typeof t.value === 'string' && t.value[0] === '#').map((t) => String(t.value).toLowerCase()),
+    dims: resolved.filter((t) => t.type === 'dimension' && /^\d+px$/.test(String(t.value))).map((t) => String(t.value).toLowerCase()),
+    dimValues: new Set(resolved.filter((t) => t.type === 'dimension').map((t) => String(t.value).toLowerCase())),
+  }
+  const remediation = runRemediation(cases, resolved, mulberry32((SEED ^ 0x5eed) >>> 0), remPal)
+  return { stats, loop, perSource, remediation, scaleLog, elapsedMs: Date.now() - t0, finalSyntheticN: n, degraded, target, budget }
 }
 
 /** Best-effort short git SHA for provenance. */
@@ -100,6 +109,15 @@ export function summarize(r, meta) {
   L.push(`## Per-source held-out (baseline → final config \`{${Object.keys(r.loop.enabled).join(', ') || 'baseline'}}\`)`)
   L.push(`- **synthetic:** ${fmtSplit(r.perSource.synthetic.baseline)}  →  ${fmtSplit(r.perSource.synthetic.final)}`)
   L.push(`- **real-OSS :** ${fmtSplit(r.perSource.oss.baseline)}  →  ${fmtSplit(r.perSource.oss.final)}`)
+  L.push('')
+  if (r.remediation) {
+    const m = r.remediation
+    L.push('')
+    L.push(`## Remediation preview (Objective 2 — oracle-gated, ${m.episodes} episodes)`)
+    L.push(`- **false-applies: ${m.falseApplies} (${(m.falseApplyRate * 100).toFixed(1)}%)** — the oracle, not the proposer, is the arbiter`)
+    L.push(`- adversarial guaranteed-wrong candidates **applied: ${m.wrongApplied}**, **graded pass by oracle: ${m.wrongPassed}** (both must be 0)`)
+    L.push(`- repair rate (episode yielded a verified fix): ${(m.repairRate * 100).toFixed(1)}%`)
+  }
   L.push('')
   L.push(`> Preliminary; synthetic + real app source (sorb-demo) + independent third-party (Spectrum BSD-3, react-color MIT — incl. independent color/contrast drift). Deterministic + reproducible (\`node src/research/runBlend.js\`).`)
   return L.join('\n')
@@ -155,7 +173,7 @@ export function appendLedger(ledgerPath, row) {
 /** Write the citable artifact (M5). Returns the dir written. */
 export function writeArtifact(r, resolved, meta, outDir) {
   mkdirSync(outDir, { recursive: true })
-  const log = { meta, stats: r.stats, elapsedMs: r.elapsedMs, degraded: r.degraded, target: r.target, scaleLog: r.scaleLog, loop: r.loop, perSource: r.perSource }
+  const log = { meta, stats: r.stats, elapsedMs: r.elapsedMs, degraded: r.degraded, target: r.target, scaleLog: r.scaleLog, loop: r.loop, perSource: r.perSource, remediation: r.remediation }
   writeFileSync(join(outDir, 'run-log.json'), JSON.stringify(log, null, 2) + '\n')
   writeFileSync(join(outDir, 'run-summary.md'), summarize(r, meta) + '\n')
   writeFileSync(join(outDir, 'resolved.snapshot.json'), JSON.stringify(resolved, null, 0) + '\n')
