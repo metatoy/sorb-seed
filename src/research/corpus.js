@@ -22,11 +22,15 @@ import { mulberry32, shuffle } from './prng.js'
 export function paletteFrom(resolved) {
   const colorValues = new Set()
   const dimValues = new Set()
+  const colors = []
   for (const t of resolved) {
-    if (t.type === 'color' && typeof t.value === 'string') colorValues.add(String(t.value).toLowerCase())
+    if (t.type === 'color' && typeof t.value === 'string' && t.value[0] === '#') {
+      colorValues.add(String(t.value).toLowerCase())
+      colors.push(String(t.value).toLowerCase())
+    }
     if (t.type === 'dimension') dimValues.add(String(t.value).toLowerCase())
   }
-  return { colorValues, dimValues }
+  return { colorValues, dimValues, colors }
 }
 
 /**
@@ -37,11 +41,15 @@ export function paletteFrom(resolved) {
  * @returns {import('./inject.js').InjectPlanItem[]}
  */
 export function planFor(rng) {
-  const bg = rng() < 0.5 ? { role: 'bg', class: 'benign' } : { role: 'bg', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' }
+  // bg: benign (binds) or stale-value drift (nudge, no bind).
+  const bg = rng() < 0.55 ? { role: 'bg', class: 'benign' } : { role: 'bg', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' }
+  // text: ~40% contrast-break (the class that exercises the oracle / coverage gap).
   const r = rng()
   const text =
-    r < 0.4 ? { role: 'text', class: 'benign' } : r < 0.75 ? { role: 'text', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' } : { role: 'text', class: 'contrast-break' }
-  const radius = rng() < 0.5 ? { role: 'radius', class: 'benign' } : { role: 'radius', class: 'scale-violation' }
+    r < 0.32 ? { role: 'text', class: 'benign' } : r < 0.6 ? { role: 'text', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' } : { role: 'text', class: 'contrast-break' }
+  // radius: benign-exact / benign-literal ('0', the precision trap) / scale-violation drift.
+  const r2 = rng()
+  const radius = r2 < 0.4 ? { role: 'radius', class: 'benign' } : r2 < 0.7 ? { role: 'radius', class: 'benign-literal' } : { role: 'radius', class: 'scale-violation' }
   return [bg, text, radius]
 }
 

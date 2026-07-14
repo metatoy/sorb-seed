@@ -141,6 +141,13 @@ export function applyInjections(comp, plan, palette) {
       raw = b.value // exact literal — binds cleanly
       label.isDrift = false
       label.causalEdit = 'inline'
+    } else if (item.class === 'benign-literal') {
+      // A legitimate hardcoded literal a developer really writes (e.g. radius 0).
+      // Detected as a site, does NOT bind to a token → the naive baseline wrongly
+      // flags it as drift (a precision trap the allowlist signal fixes).
+      raw = '0'
+      label.isDrift = false
+      label.causalEdit = 'literal'
     } else if (item.class === 'stale-value') {
       raw = perturbHex(b.value, palette.colorValues)
       label.isDrift = true
@@ -150,12 +157,30 @@ export function applyInjections(comp, plan, palette) {
       label.isDrift = true
       label.causalEdit = 'off-scale'
     } else if (item.class === 'contrast-break') {
-      raw = lowContrastFg(bgVal || b.value)
-      const ratio = contrastRatio(raw, bgVal || b.value)
+      const bgv = bgVal || b.value
+      // Prefer a REAL token color that fails AA vs the bg — a token used at
+      // failing contrast BINDS, so the naive baseline calls it benign and MISSES
+      // it (the coverage gap only the contrast oracle closes). Fall back to a
+      // synthesized low-contrast color when no token color violates.
+      let tokenValued = false
+      raw = null
+      if (palette.colors) {
+        for (const hex of palette.colors) {
+          const h = String(hex).toLowerCase()
+          if (h === bgv.toLowerCase()) continue
+          if (violatesAA(h, bgv) === true) {
+            raw = h
+            tokenValued = true
+            break
+          }
+        }
+      }
+      if (!raw) raw = lowContrastFg(bgv)
+      const ratio = contrastRatio(raw, bgv)
       label.isDrift = true
       label.causalEdit = 'contrast'
       label.intendedTokenId = null // contrast is a pairing property, not a single-token drift
-      label.contrast = { fg: raw, bg: bgVal || b.value, ratio: ratio == null ? 0 : ratio, threshold: AA_NORMAL, violates: violatesAA(raw, bgVal || b.value) === true }
+      label.contrast = { fg: raw, bg: bgv, ratio: ratio == null ? 0 : ratio, threshold: AA_NORMAL, violates: violatesAA(raw, bgv) === true, tokenValued }
     } else {
       continue
     }

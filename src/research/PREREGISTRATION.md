@@ -96,4 +96,40 @@ figure until the founder verifies (D4). "Don't misrepresent; they'll catch you."
 
 ## Amendments (append-only; each dated)
 
-*(none yet)*
+### Amendment 1 — 2026-07-14 — instrument de-degeneracy (BEFORE any at-scale counted run)
+
+During M2 scorer construction we validated the instrument and found the first corpus **degenerate**:
+because the built binder (`matchColor`) is **exact-match only**, every injected drift fails to bind
+and every benign is an exact token value — so the naive "unbindable ⇒ drift" baseline scored a
+trivial **100% coverage / 100% precision** on held-out. A ceiling metric leaves the loop nothing to
+close. Fix (made during instrument construction, before any at-scale counted run — the legitimate
+pre-registration window):
+
+1. **Corpus enrichment (two realistic gap-makers):**
+   - `benign-literal` — a legitimate hardcoded literal a dev really writes (`radius: 0`): detected
+     but does not bind → the naive baseline wrongly flags it (a **precision** trap). *Verified:* `'0'`
+     detects as a dimension site and binds to no token.
+   - `contrast-break` now uses a **token-valued** color (a real token that fails AA vs the bg) when
+     one exists: it **binds**, so the baseline calls it benign and misses it — a **coverage** gap the
+     contrast oracle closes. Fallback to a synthesized low-contrast color when no token violates.
+   - `planFor` distribution updated (bg 55/45 · text 32/28/40 benign/stale/contrast · radius
+     40/30/30 benign/benign-literal/scale).
+
+2. **Frozen classifier signals** (score.js): `literalAllowlist`, `contrastAware`, `roleAware`,
+   `nearMatch`, `lowConfDrift`. Baseline = binding-only (none enabled).
+
+3. **Frozen attempt order** (loop.js `ATTEMPTS`, one signal per attempt, pre-declared — NOT chosen
+   after results): `literal-allowlist → contrast-oracle → role-aware → near-match-benign →
+   low-confidence-drift`.
+
+4. **Frozen admissibility rule:** feasible ⇔ held-out precision ≥ 0.99. Accept an attempt iff it
+   (a) stays feasible AND gains ≥ 2.0pp held-out coverage, OR (b) repairs feasibility (infeasible →
+   feasible) without losing coverage. Otherwise it is a no-gain (reverted). **Stop after 3
+   consecutive no-gains.**
+
+5. **Frozen reproducibility constants** (supersede §4's loose notation): corpus **seed = 1425443**,
+   **splitSeed = 0xC0FFEE (12648430)**, **trainFrac = 0.70**.
+
+No test-split result was consulted in choosing any of the above — the enrichment is about corpus
+*realism* (real apps have `radius:0` and real tokens used at failing contrast), not about hitting a
+target number. The official at-scale run (M4/M5) executes this frozen protocol unchanged.

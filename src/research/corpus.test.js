@@ -29,7 +29,7 @@ test('split is ~70/30 and frozen by splitSeed', () => {
   assert.equal(s.test, 12)
 })
 
-test('corpus carries BOTH drift and benign, and every class appears', () => {
+test('corpus carries BOTH drift and benign, incl. the gap-making classes', () => {
   const s = corpusStats(buildCorpus(RESOLVED, OPTS))
   assert.ok(s.drift > 0, 'has drift sites')
   assert.ok(s.benign > 0, 'has benign sites')
@@ -37,8 +37,10 @@ test('corpus carries BOTH drift and benign, and every class appears', () => {
   assert.ok(s.byClass['scale-violation'] > 0)
   assert.ok(s.byClass['contrast-break'] > 0)
   assert.ok(s.byClass['benign'] > 0)
+  assert.ok(s.byClass['benign-literal'] > 0, 'has legit-literal benign (the precision trap)')
   // the held-out split is not degenerate: it must contain drift to be scorable
   assert.ok(s.testDrift > 0, 'held-out split contains drift')
+  assert.ok(s.testBenign > 0, 'held-out split contains benign')
 })
 
 test('every contrast-break label is an oracle-verified real violation (0 injected false positives)', () => {
