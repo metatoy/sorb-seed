@@ -51,6 +51,33 @@ test('injectFile: produces labeled sites with perfect loc integrity on real-shap
   }
 })
 
+// styled-components idiom: values live inside a template literal, so the
+// detector reports them at the template-chunk loc. The injector must still
+// place correct labels via globally-unique injected values.
+const STYLED = [
+  'import styled from "styled-components"',
+  'export const Btn = styled.button`',
+  '  border-radius: 32px;',
+  '  margin-right: 4px;',
+  '  padding: 12px;',
+  '  line-height: 24px;',
+  '`',
+].join('\n')
+
+test('injectFile: styled-components — every label is a UNIQUELY locatable injected value', () => {
+  const rng = mulberry32(1425443)
+  const { source, labels } = injectFile('Btn.jsx', STYLED, rng, PAL, { maxPerFile: 8 })
+  assert.ok(labels.length > 0, 'produced labels from a styled-components file')
+  const finalSites = detectHardcoded(source, 'Btn.jsx')
+  for (const l of labels) {
+    // strict-verify guarantee: the injected value occurs exactly once in source
+    assert.equal(source.split(l.raw).length - 1, 1, `injected value ${l.raw} is unique`)
+    // and the detector re-finds exactly one site carrying it
+    assert.equal(finalSites.filter((s) => s.raw === l.raw).length, 1, `detector finds ${l.raw} once`)
+    assert.ok(['scale-violation', 'stale-value'].includes(l.class), 'template idiom yields drift classes')
+  }
+})
+
 test('injectFile: is deterministic for a fixed seed', () => {
   const a = injectFile('A.jsx', SRC, mulberry32(7), PAL, {})
   const b = injectFile('A.jsx', SRC, mulberry32(7), PAL, {})

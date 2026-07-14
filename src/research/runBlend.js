@@ -90,7 +90,7 @@ export function summarize(r, meta) {
   L.push(`## Corpus (blend)`)
   L.push(`- ${r.stats.cases} components, **${r.stats.sites} labeled sites** (${r.stats.drift} drift / ${r.stats.benign} benign); held-out test ${r.stats.test} components`)
   L.push(`- classes: ${JSON.stringify(r.stats.byClass)}`)
-  L.push(`- synthetic ${r.perSource.synthetic.n} cases · real-OSS ${r.perSource.oss.n} cases (sorb-demo app source)`)
+  L.push(`- synthetic ${r.perSource.synthetic.n} cases · real-OSS ${r.perSource.oss.n} cases (sorb-demo app, inline-style idiom + Spectrum, **independent** BSD-3, styled-components idiom)`)
   L.push('')
   L.push(`## Loop trajectory (held-out, blend)`)
   L.push('```')
@@ -101,7 +101,7 @@ export function summarize(r, meta) {
   L.push(`- **synthetic:** ${fmtSplit(r.perSource.synthetic.baseline)}  →  ${fmtSplit(r.perSource.synthetic.final)}`)
   L.push(`- **real-OSS :** ${fmtSplit(r.perSource.oss.baseline)}  →  ${fmtSplit(r.perSource.oss.final)}`)
   L.push('')
-  L.push(`> Preliminary; synthetic + own-app source. Deterministic + reproducible (\`node src/research/runBlend.js\`).`)
+  L.push(`> Preliminary; synthetic + real app source (sorb-demo) + independent third-party (Spectrum, BSD-3). Deterministic + reproducible (\`node src/research/runBlend.js\`).`)
   return L.join('\n')
 }
 
@@ -168,7 +168,11 @@ if (isMain) {
   const resolvedRef = '../sorb-demo/.sorb/resolved.json'
   const resolvedPath = resolve(here, '..', '..', resolvedRef)
   const resolved = JSON.parse(readFileSync(resolvedPath, 'utf-8'))
-  const ossRoots = [resolve(here, '..', '..', '..', 'sorb-demo', 'src'), resolve(here, '..', '..', '..', 'sorb-demo', 'stories')]
+  const ossRoots = [
+    resolve(here, '..', '..', '..', 'sorb-demo', 'src'), // real Metatoy app source (inline-style idiom)
+    resolve(here, '..', '..', '..', 'sorb-demo', 'stories'),
+    resolve(here, 'fixtures', 'oss-vendor', 'spectrum'), // independent third-party (Spectrum, BSD-3; styled-components idiom)
+  ]
   const artifactDir = resolve(here, '..', '..', '..', 'spec', 'metatoy-studio', 'llc', 'funding', 'nsf-sbir-run-2026-07', 'artifacts', 'research-loop-poc')
 
   if (process.argv.includes('--nightly')) {

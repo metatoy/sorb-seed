@@ -93,15 +93,20 @@ export function classifyComponent(source, filename, index, resolved, opts = {}) 
   })
 }
 
-/** Match predictions to labels by source location (general: works for real
- *  multi-site files where roles are not unique). Falls back to role. */
+/** Match predictions to labels. Prefer exact loc+value; fall back to a unique
+ *  value match (needed for styled-components sites, which share a template loc
+ *  but carry a value made unique at injection time). Each pred used once. */
 function pairByLoc(preds, labels) {
-  const key = (x) => `${x.loc.line}:${x.loc.column}`
-  const byKey = new Map(preds.map((p) => [key(p), p]))
   const out = []
+  const used = new Set()
+  const take = (i, l) => { used.add(i); out.push({ label: l, pred: preds[i] }) }
   for (const l of labels) {
-    const p = byKey.get(key(l)) || preds.find((x) => x.role === l.role && x.raw === l.raw)
-    if (p) out.push({ label: l, pred: p })
+    let idx = preds.findIndex((x, i) => !used.has(i) && x.loc.line === l.loc.line && x.loc.column === l.loc.column && x.raw === l.raw)
+    if (idx < 0) {
+      const m = preds.map((x, i) => (!used.has(i) && x.raw === l.raw ? i : -1)).filter((i) => i >= 0)
+      if (m.length === 1) idx = m[0]
+    }
+    if (idx >= 0) take(idx, l)
   }
   return out
 }

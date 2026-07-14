@@ -69,59 +69,100 @@ export function injectFile(name, source, rng, pal, o = {}) {
     if (/^\d+$/.test(raw)) return 'num'
     return null
   }
+  const lines0 = source.split('\n')
+  // Loc-accuracy: does the recorded loc actually point at the value? True for
+  // JSX inline-style sites (value node loc); FALSE for styled-components
+  // template quasis (loc points at the chunk, many values share it). We must
+  // NOT line-edit an inaccurate site — that mislabels ground truth.
+  const isAccurate = (s) => {
+    const seg = (lines0[s.loc.line - 1] || '').slice(s.loc.column)
+    return seg.startsWith(s.raw) || seg.startsWith("'" + s.raw) || seg.startsWith('"' + s.raw)
+  }
+  // A `next` value must be UNIQUE in the source AND across sibling injections so
+  // re-detection can locate it unambiguously — the only way to place a label
+  // correctly for template sites. `usedNext` tracks values already assigned.
+  const usedNext = new Set()
+  const present = (v) => source.split(v).length - 1
+  const free = (v) => present(v) === 0 && !usedNext.has(v)
+  const uniqueOffScale = (seed) => {
+    for (let k = seed; k <= seed + 80; k++) { const v = `${k}px`; if (!pal.dimValues.has(v) && free(v)) return v }
+    return null
+  }
+  const uniqueNum = (seed) => {
+    for (let k = seed; k <= seed + 300; k++) { if (!pal.dimValues.has(`${k}px`) && free(String(k))) return String(k) }
+    return null
+  }
+  const uniquePerturb = (hex) => {
+    let v = perturbHex(hex, pal.colorValues)
+    for (let i = 0; i < 16 && !free(v); i++) v = perturbHex(v, pal.colorValues)
+    return free(v) ? v : null
+  }
+
   const eligible = sites.filter((s) => kindOf(s.raw) != null)
   const chosen = shuffle(rng, eligible).slice(0, maxPerFile)
   const plans = []
   for (const site of chosen) {
     const kind = kindOf(site.raw)
+    const accurate = isAccurate(site)
     let next = null
     /** @type {any} */
     const label = { file: name, prop: site.prop, role: site.role, originalValue: site.raw, intendedTokenId: null }
     if (kind === 'hex') {
       const tok = pick(rng, pal.colorTokens)
       const r = rng()
-      if (site.role === 'text' && bg && r < 0.4) {
+      if (accurate && site.role === 'text' && bg && r < 0.4) {
         let fg = null
         for (const h of pal.colors) if (h !== bg && violatesAA(h, bg) === true) { fg = h; break }
         if (!fg) fg = lowContrastFg(bg)
         next = fg
         const ratio = contrastRatio(fg, bg)
         Object.assign(label, { class: 'contrast-break', causalEdit: 'contrast', isDrift: true, contrast: { fg, bg, ratio: ratio == null ? 0 : ratio, threshold: AA_NORMAL, violates: violatesAA(fg, bg) === true, tokenValued: pal.colorValues.has(fg) } })
-      } else if (r < 0.55) {
+      } else if (accurate && r < 0.55) {
         next = tok.value
         Object.assign(label, { class: 'benign', causalEdit: 'inline', isDrift: false })
       } else {
-        next = perturbHex(tok.value, pal.colorValues)
-        Object.assign(label, { class: 'stale-value', causalEdit: rng() < 0.5 ? 'stale' : 'rename', isDrift: true })
+        next = uniquePerturb(tok.value) // stale-value (unique → locatable in either idiom)
+        if (next) Object.assign(label, { class: 'stale-value', causalEdit: rng() < 0.5 ? 'stale' : 'rename', isDrift: true })
       }
     } else {
-      // dimension — px string or bare numeric; keep the same kind on substitution
       const tok = pick(rng, pal.dimTokens)
       const r = rng()
       const asKind = (px) => (kind === 'px' ? px : numPart(px))
-      if (r < 0.4) {
-        next = asKind(tok.value) // benign-exact (binds by normalized value)
+      if (accurate && r < 0.4) {
+        next = asKind(tok.value) // benign-exact (accurate loc → line-editable)
         Object.assign(label, { class: 'benign', causalEdit: 'inline', isDrift: false })
-      } else if (r < 0.7) {
-        next = '0' // benign-literal precision trap
+      } else if (accurate && r < 0.7) {
+        next = '0' // benign-literal (accurate loc only — '0' is not unique)
         Object.assign(label, { class: 'benign-literal', causalEdit: 'literal', isDrift: false })
       } else {
-        next = asKind(offScalePx(tok.value, pal.dimValues))
-        Object.assign(label, { class: 'scale-violation', causalEdit: 'off-scale', isDrift: true })
+        // scale-violation with a GLOBALLY-UNIQUE off-scale value → locatable in
+        // both inline and styled-components idioms.
+        next = kind === 'px' ? uniqueOffScale(parseInt(tok.value, 10) + 1) : uniqueNum(parseInt(tok.value, 10) + 1)
+        if (next) Object.assign(label, { class: 'scale-violation', causalEdit: 'off-scale', isDrift: true })
       }
     }
-    if (next != null && next !== site.raw) plans.push({ site, next, label })
+    if (next != null && next !== site.raw && label.class) {
+      if (!p_accurate_unique(accurate, next)) usedNext.add(next) // reserve unique nexts across siblings
+      plans.push({ site, next, label, accurate })
+    }
   }
 
-  // Apply edits line-by-line, right-to-left within a line to keep columns valid.
-  const lines = source.split('\n')
-  const byLine = new Map()
-  for (const p of plans) {
-    const ln = p.site.loc.line
-    if (!byLine.has(ln)) byLine.set(ln, [])
-    byLine.get(ln).push(p)
+  // accurate benign literals ('0') and exact token values are line-located, so
+  // they don't need global uniqueness; template nexts do (tracked in usedNext).
+  function p_accurate_unique(accurate, next) {
+    return accurate && (next === '0' || pal.dimValues.has(next))
   }
-  for (const [ln, ps] of byLine) {
+
+  // Apply: accurate sites via line edit (targets the exact loc); inaccurate
+  // (template) sites via first-occurrence global replace of a UNIQUE next.
+  const lines = source.split('\n')
+  const accByLine = new Map()
+  for (const p of plans.filter((p) => p.accurate)) {
+    const ln = p.site.loc.line
+    if (!accByLine.has(ln)) accByLine.set(ln, [])
+    accByLine.get(ln).push(p)
+  }
+  for (const [ln, ps] of accByLine) {
     ps.sort((a, b) => b.site.loc.column - a.site.loc.column)
     for (const p of ps) {
       const res = replaceOnLine(lines[ln - 1], p.site.loc.column, p.site.raw, p.next)
@@ -129,15 +170,28 @@ export function injectFile(name, source, rng, pal, o = {}) {
       else p.dropped = true
     }
   }
-  const mutated = lines.join('\n')
+  let mutated = lines.join('\n')
+  for (const p of plans.filter((p) => !p.accurate && !p.dropped)) {
+    const at = mutated.indexOf(p.site.raw)
+    if (at < 0) { p.dropped = true; continue }
+    mutated = mutated.slice(0, at) + p.next + mutated.slice(at + p.site.raw.length)
+  }
 
-  // Re-detect and attach real locs by (line, injected raw).
+  // STRICT verify: keep a label ONLY if re-detection confirms exactly one site
+  // with the injected value (disambiguating accurate sites by line). Anything
+  // unconfirmed is dropped — we never emit a mislabeled ground-truth site.
   const finalSites = detectHardcoded(mutated, name)
   const labels = []
   for (const p of plans) {
     if (p.dropped) continue
-    const st = finalSites.find((s) => s.loc.line === p.site.loc.line && s.raw === p.next) || finalSites.find((s) => s.raw === p.next)
-    if (!st) continue
+    const matches = finalSites.filter((s) => s.raw === p.next)
+    let st = null
+    if (matches.length === 1) st = matches[0]
+    else if (matches.length > 1 && p.accurate) {
+      const onLine = matches.filter((s) => s.loc.line === p.site.loc.line)
+      if (onLine.length === 1) st = onLine[0]
+    }
+    if (!st) continue // unverifiable → drop (integrity: no mislabeled sites)
     labels.push({ ...p.label, loc: st.loc, raw: p.next })
   }
   return { name, source: mutated, labels }
