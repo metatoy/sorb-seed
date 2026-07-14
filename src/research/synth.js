@@ -40,9 +40,14 @@ const binding = (prop, role, t) => ({ prop, role, cssVar: t.cssVar, tokenId: t.i
  * @param {any} bg
  */
 function pickPassingText(rng, colors, bg) {
-  for (let i = 0; i < 8; i++) {
+  // Require a MARGIN above AA, not just ≥4.5, so a small bg drift (a nudge to the
+  // background in another injection) can't push a benign text below threshold and
+  // create a spurious contrast false-positive. Compound bg-drift × text-contrast
+  // is a real Phase-II concern; here we keep benign text unambiguously passing.
+  const MARGIN = AA_NORMAL + 1.5
+  for (let i = 0; i < 12; i++) {
     const cand = pick(rng, colors)
-    if (cand && cand.id !== bg.id && contrastRatio(cand.value, bg.value) >= AA_NORMAL) return cand
+    if (cand && cand.id !== bg.id && contrastRatio(cand.value, bg.value) >= MARGIN) return cand
   }
   // fallback: max-contrast color (deterministic — no rng)
   let best = null

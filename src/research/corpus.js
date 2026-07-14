@@ -23,14 +23,19 @@ export function paletteFrom(resolved) {
   const colorValues = new Set()
   const dimValues = new Set()
   const colors = []
+  const bgRoleColors = [] // values of bg/surface-role tokens (for wrong-role drift)
+  const textRoleValues = new Set() // values that legitimately ARE text-role tokens
   for (const t of resolved) {
     if (t.type === 'color' && typeof t.value === 'string' && t.value[0] === '#') {
-      colorValues.add(String(t.value).toLowerCase())
-      colors.push(String(t.value).toLowerCase())
+      const v = String(t.value).toLowerCase()
+      colorValues.add(v)
+      colors.push(v)
+      if (t.id.includes('.bg') || t.id.includes('.surface')) bgRoleColors.push(v)
+      if (t.id.includes('.text')) textRoleValues.add(v)
     }
     if (t.type === 'dimension') dimValues.add(String(t.value).toLowerCase())
   }
-  return { colorValues, dimValues, colors }
+  return { colorValues, dimValues, colors, bgRoleColors, textRoleValues }
 }
 
 /**
@@ -43,10 +48,11 @@ export function paletteFrom(resolved) {
 export function planFor(rng) {
   // bg: benign (binds) or stale-value drift (nudge, no bind).
   const bg = rng() < 0.55 ? { role: 'bg', class: 'benign' } : { role: 'bg', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' }
-  // text: ~40% contrast-break (the class that exercises the oracle / coverage gap).
+  // text: contrast-break (oracle/coverage gap) + wrong-role (the adversarial
+  // ceiling-breaker: binds to a wrong-role token, passes contrast, looks benign).
   const r = rng()
   const text =
-    r < 0.32 ? { role: 'text', class: 'benign' } : r < 0.6 ? { role: 'text', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' } : { role: 'text', class: 'contrast-break' }
+    r < 0.26 ? { role: 'text', class: 'benign' } : r < 0.46 ? { role: 'text', class: 'stale-value', causal: rng() < 0.5 ? 'stale' : 'rename' } : r < 0.74 ? { role: 'text', class: 'contrast-break' } : { role: 'text', class: 'wrong-role' }
   // radius: benign-exact / benign-literal ('0', the precision trap) / scale-violation drift.
   const r2 = rng()
   const radius = r2 < 0.4 ? { role: 'radius', class: 'benign' } : r2 < 0.7 ? { role: 'radius', class: 'benign-literal' } : { role: 'radius', class: 'scale-violation' }

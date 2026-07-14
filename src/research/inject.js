@@ -156,6 +156,30 @@ export function applyInjections(comp, plan, palette) {
       raw = offScalePx(b.value, palette.dimValues)
       label.isDrift = true
       label.causalEdit = 'off-scale'
+    } else if (item.class === 'wrong-role') {
+      // Semantic drift that LOOKS benign: a text color set to a bg-role token's
+      // value that still PASSES contrast. It binds (to the wrong-role token), so
+      // value+contrast signals call it benign — a genuine miss only source-level
+      // role semantics could catch. Caps coverage honestly (Phase-I need).
+      const bgv = bgVal || b.value
+      let wrong = null
+      for (const h of (palette.bgRoleColors || [])) {
+        if (h === b.value.toLowerCase()) continue
+        if (palette.textRoleValues && palette.textRoleValues.has(h)) continue
+        if (violatesAA(h, bgv) === false) { wrong = h; break }
+      }
+      if (wrong) {
+        raw = wrong
+        label.isDrift = true
+        label.causalEdit = 'wrong-role'
+        label.intendedTokenId = b.tokenId
+      } else {
+        // no suitable wrong-role color → fall back to benign-exact (no drift)
+        raw = b.value
+        label.isDrift = false
+        label.class = 'benign'
+        label.causalEdit = 'inline'
+      }
     } else if (item.class === 'contrast-break') {
       const bgv = bgVal || b.value
       // Prefer a REAL token color that fails AA vs the bg — a token used at
