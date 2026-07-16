@@ -1,6 +1,6 @@
 # @sorb/seed
 
-Storybook→Figma capture for Sorb, the design-token bridge for your running app. (Seed.)
+Storybook→Figma capture for Sorb™, the design-token bridge for your running app. (Seed.)
 
 This package holds the **heavy** pieces (esbuild now; Playwright later)
 so the bridge (`@sorb/juice`) and `@sorb/leaf` stay lean.
@@ -128,3 +128,7 @@ ranking (component > semantic > primitive).
 Planned: the **plugin materializer** (turns each `LayerNode` into a Figma
 component bound to Variables via `setBoundVariable`); pseudo-elements and
 forced interaction states; component-set assembly from per-story captures.
+
+---
+
+**Sorb™** is a trademark of Metatoy LLC.
