@@ -44,6 +44,11 @@ Commands:
   capture            Visit each Storybook story with Playwright, capture the
                      rendered tree, and annotate it against the resolved token
                      map → per-component *.sorb.json + .sorb/index.json.
+  render-worker      Hosted-capture on-demand render worker (Mode B / E3):
+                     reads RenderJobInput job(s) as NDJSON on stdin (or
+                     --job=/--job-file=), renders each against a URL + token
+                     map, emits RenderJobResult NDJSON on stdout. See
+                     src/render/worker.js.
   variant <add|deprecate>
                      Add or deprecate a component variant in the DTCG source,
                      bump $version, and rebuild. See \`variant\` usage below.
@@ -101,6 +106,9 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
     else if (a.startsWith('--storybook-url=')) opts.storybookUrl = a.slice('--storybook-url='.length)
   }
   await runCapture(opts)
+} else if (cmd === 'render-worker') {
+  const { main: renderWorkerMain } = await import('./render/cli.js')
+  await renderWorkerMain(process.argv)
 } else if (cmd === 'variant') {
   const sub = process.argv[3]
 
@@ -228,6 +236,6 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   }
 
 } else {
-  console.error(`Unknown command: ${cmd}\nUsage: sorb-seed <resolve|capture|variant> [options]\nRun \`sorb-seed --help\` for details.`)
+  console.error(`Unknown command: ${cmd}\nUsage: sorb-seed <resolve|capture|render-worker|variant> [options]\nRun \`sorb-seed --help\` for details.`)
   process.exit(1)
 }
