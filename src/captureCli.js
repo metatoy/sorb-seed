@@ -5,48 +5,11 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { createHash } from 'crypto'
-import { dirname, resolve, basename, extname } from 'path'
-import { build } from 'esbuild'
+import { resolve, dirname, basename, extname } from 'path'
+import { getSource, resolveConnectorIds } from '@sorb/core'
 import { tightenRoot } from './capture.js'
 import { buildTokenIndex, annotateTree } from './annotateTokens.js'
-
-// Playwright is an OPTIONAL peer dep — only `capture` needs it, and it pulls a
-// ~150 MB browser. Lazy-load it so plain installs and `resolve` stay lean.
-const loadChromium = async () => {
-  try {
-    const { chromium } = await import('playwright')
-    return chromium
-  } catch {
-    console.error(
-      '✗ `sorb-seed capture` needs Playwright (it is an optional peer dep).\n' +
-        '  Install it where you run capture:\n' +
-        '    npm install playwright            # its postinstall fetches Chromium\n' +
-        '  (or: npm install playwright && npx playwright install chromium)',
-    )
-    process.exit(1)
-  }
-}
-
-// The `playwright` PACKAGE can be installed while its Chromium BROWSER binary is
-// not (that's a separate `npx playwright install chromium` step). Launching then
-// throws a raw "Executable doesn't exist" error — turn it into the same
-// actionable guidance the missing-package path already gives.
-export const launchChromium = async (chromium) => {
-  try {
-    return await chromium.launch()
-  } catch (e) {
-    const msg = e && e.message ? e.message : String(e)
-    if (/Executable doesn't exist|playwright install|browserType\.launch/i.test(msg)) {
-      console.error(
-        '✗ `sorb-seed capture` found Playwright but its Chromium browser is not installed.\n' +
-          '  Install the browser where you run capture:\n' +
-          '    npx playwright install chromium',
-      )
-      process.exit(1)
-    }
-    throw e
-  }
-}
+import { closeSession, storybookUrlOf } from './sources/storybookDom.js'
 
 const cwd = process.cwd()
 
@@ -71,46 +34,11 @@ const loadResolved = () => {
 
 const sha256 = (s) => createHash('sha256').update(s).digest('hex')
 
-// Bundle the walker into a single IIFE string we can addInitScript() into
-// every page. Playwright can't pass functions across the boundary directly,
-// and our walker has cross-file imports → bundling is the clean answer.
-const buildWalkerBundle = async () => {
-  const here = dirname(new URL(import.meta.url).pathname)
-  const out = await build({
-    entryPoints: [resolve(here, 'capture.js')],
-    bundle: true,
-    format: 'iife',
-    platform: 'browser',
-    write: false,
-    logLevel: 'silent',
-    target: 'es2020',
-  })
-  return out.outputFiles[0].text
-}
-
-const isStoryEntry = (e) =>
-  e && (e.type === 'story' || (e.type === undefined && e.importPath)) // SB7/8: type:'story'
-
-// Group story entries by their component (importPath) and pick the directory
-// of the story file as the artifact output dir (co-located).
-const groupByComponent = (entries) => {
-  const groups = new Map()
-  for (const e of entries) {
-    if (!groups.has(e.importPath)) groups.set(e.importPath, [])
-    groups.get(e.importPath).push(e)
-  }
-  return groups
-}
-
 // componentName: "Button" from "./src/.../Button.stories.jsx"
 const componentNameFromImportPath = (importPath) => {
   const file = basename(importPath, extname(importPath)) // "Button.stories"
   return file.replace(/\.stories$/i, '')
 }
-
-// sorb.config.json may set seed.storybookUrl. Fall back to localhost.
-const storybookUrlOf = (config) =>
-  (config.seed && config.seed.storybookUrl) || 'http://localhost:6006'
 
 const filterEntries = (entries, only) => {
   if (!only) return entries
@@ -122,65 +50,38 @@ export const runCapture = async (opts) => {
   const config = loadConfig()
   const resolved = loadResolved()
   const index = buildTokenIndex(resolved)
-  const sbUrl = (opts.storybookUrl || storybookUrlOf(config)).replace(/\/$/, '')
+  // `--storybook-url=` is a capture-command flag, not a sorb.config.json key —
+  // fold it into an effective config so the connector's own storybookUrlOf()
+  // resolution (config.seed.storybookUrl -> localhost default) still applies
+  // the same precedence the CLI used to apply inline.
+  const effectiveConfig = opts.storybookUrl
+    ? { ...config, seed: { ...(config.seed || {}), storybookUrl: opts.storybookUrl } }
+    : config
 
-  // 1. Discover stories
-  console.log(`→ Storybook: ${sbUrl}`)
-  let sbIndex
-  try {
-    const res = await fetch(`${sbUrl}/index.json`)
-    if (!res.ok) throw new Error('HTTP ' + res.status)
-    sbIndex = await res.json()
-  } catch (e) {
-    console.error('✗ Could not fetch Storybook index:', e.message)
-    process.exit(1)
-  }
-  const entries = filterEntries(
-    Object.values(sbIndex.entries || sbIndex.stories || {}).filter(isStoryEntry),
-    opts.only,
-  )
+  const connector = getSource(resolveConnectorIds(config).source)
+
+  // 1. Discover units (source connector)
+  const rawEntries = await connector.listUnits(effectiveConfig)
+  const entries = filterEntries(rawEntries, opts.only)
   if (!entries.length) {
     console.error('✗ No stories matched filter:', opts.only || '(all)')
     process.exit(1)
   }
   console.log(`→ ${entries.length} stories selected`)
 
-  // 2. Browser setup + walker injection
-  const chromium = await loadChromium()
-  const walker = await buildWalkerBundle()
-  const browser = await launchChromium(chromium)
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 800 } })
-  await ctx.addInitScript({ content: walker })
-
-  // 3. Capture each story, group by component
+  // 2. Capture each unit (source connector), group by component
   const captured = new Map() // importPath -> { component, importPath, stories[] }
   const oldIndex = readOldIndex(config)
 
-  for (const entry of entries) {
-    const url = `${sbUrl}/iframe.html?id=${entry.id}&viewMode=story`
-    const page = await ctx.newPage()
+  for (const unit of entries) {
+    // The whole per-unit body is wrapped so a throw in ANY step (capture,
+    // tighten, annotate, hash, store) skips just that unit and continues the
+    // run — matching the pre-connector behavior (a single bad story must not
+    // abort the entire capture).
     try {
-      console.log(`  · ${entry.id}`)
-      await page.goto(url, { waitUntil: 'load' })
-      // Wait for Storybook to actually render the story.
-      await page
-        .waitForFunction(
-          () => !!document.querySelector('#storybook-root *'),
-          { timeout: 15000 },
-        )
-        .catch(() => {})
-      await page.evaluate(() => document.fonts && document.fonts.ready)
-      await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {})
+      const rawTree = await connector.captureGeometry(unit, effectiveConfig)
+      if (!rawTree) continue // connector already logged why it skipped
 
-      const rawTree = await page.evaluate(() => {
-        const root = document.querySelector('#storybook-root')
-        return root ? window.__sorbCapture(root) : null
-      })
-      if (!rawTree) {
-        console.warn('    ⚠ no #storybook-root content; skipped')
-        await page.close()
-        continue
-      }
       // Trim the story container down to the meaningful component BEFORE
       // annotation/storage so insert + preview get a tight, token-bound node
       // (sorb-capture-trim-spec.md). Annotation runs on the kept subtree, so
@@ -190,42 +91,40 @@ export const runCapture = async (opts) => {
       const hash = 'sha256:' + sha256(JSON.stringify(tree))
 
       // --changed: reuse the previous artifact if hash matches
-      const prevHash = oldIndex.stories[entry.id]?.hash
+      const prevHash = oldIndex.stories[unit.id]?.hash
       if (opts.changed && prevHash === hash) {
         console.log('    = unchanged')
-        await page.close()
         continue
       }
 
-      if (!captured.has(entry.importPath)) {
-        captured.set(entry.importPath, {
+      if (!captured.has(unit.importPath)) {
+        captured.set(unit.importPath, {
           schemaVersion: 1,
-          component: componentNameFromImportPath(entry.importPath),
-          importPath: entry.importPath,
+          component: componentNameFromImportPath(unit.importPath),
+          importPath: unit.importPath,
           capturedAt: new Date().toISOString(),
           stories: [],
         })
       }
-      captured.get(entry.importPath).stories.push({
-        id: entry.id,
-        name: entry.name,
-        title: entry.title,
+      captured.get(unit.importPath).stories.push({
+        id: unit.id,
+        name: unit.name,
+        title: unit.title,
         hash,
         root: tree,
       })
     } catch (e) {
-      console.error('    ✗', entry.id, '—', e.message)
-    } finally {
-      await page.close()
+      console.error('    ✗', unit.id, '—', e.message)
+      continue
     }
   }
-  await browser.close()
+  await closeSession()
 
-  // 4. Write artifacts next to each story file, then the index
+  // 3. Write artifacts next to each story file, then the index
   const indexOut = {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
-    storybookUrl: sbUrl,
+    storybookUrl: storybookUrlOf(effectiveConfig).replace(/\/$/, ''),
     components: [],
     stories: { ...oldIndex.stories }, // preserves entries we didn't recapture
   }
