@@ -5,3 +5,30 @@
 // so the old `resolveBindableTokens` export is gone. What remains useful as a
 // library is the token-annotation layer used by `capture`.
 export { buildTokenIndex, annotateTree, matchColor, matchDimension } from './annotateTokens.js'
+
+// Sorb's custom Style Dictionary outputs (component-compat-roadmap P0, part
+// 2) — promoted from sorb-demo's copy-local `sd/sorb-format.js` so target
+// adapters import these formats instead of duplicating them. A consumer's
+// `sd.config.js` registers these with `StyleDictionary.registerFormat`/
+// `registerParser` the same way sorb-demo's does.
+export {
+  tierOfFile,
+  SORB_RESOLVED,
+  SORB_THEME_NESTED,
+  SORB_ALIASES,
+  SORB_VERSIONS,
+  SORB_SET_META,
+  SORB_TAILWIND,
+  SORB_TAILWIND_V3,
+  SORB_TOKENSET,
+  sorbSetMeta,
+  sorbVersions,
+  sorbTokenSet,
+  sorbResolved,
+  sorbAliases,
+  sorbThemeNested,
+  tailwindThemeEntry,
+  sorbTailwind,
+  tailwindV3Slot,
+  sorbTailwindV3,
+} from './emit/sorbFormat.js'
