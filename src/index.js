@@ -49,3 +49,7 @@ export { SORB_MUI_VARS, MUI_VAR_MAP, sorbMuiVars } from './emit/sorbMui.js'
 // (framework-targets-productization T5) — promoted from
 // `sorb-demo-angular/sd.config.js:96-113`.
 export { SORB_MAT_SYS_VARS, MAT_SYS_MAP, sorbMatSysVars } from './emit/sorbMatSys.js'
+
+// PrimeVue v4 preset format (framework-targets-productization T4) — the first
+// JS-emitting target format; generated from `sorb-demo-primevue/src/jjPreset.js`.
+export { SORB_PRIMEVUE_PRESET, PRIMEVUE_ROLE_TREE, sorbPrimevuePreset } from './emit/sorbPrimevue.js'
