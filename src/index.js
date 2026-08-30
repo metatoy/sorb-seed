@@ -32,3 +32,7 @@ export {
   tailwindV3Slot,
   sorbTailwindV3,
 } from './emit/sorbFormat.js'
+
+// Mantine v7 CSS-var override format (framework-targets-productization T2) —
+// promoted from `sorb-demo-mantine/sd/mantine-format.js`.
+export { SORB_MANTINE_VARS, MANTINE_VAR_MAP, sorbMantineVars } from './emit/sorbMantine.js'
