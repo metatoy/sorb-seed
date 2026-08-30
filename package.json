@@ -1,6 +1,6 @@
 {
   "name": "@sorb/seed",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Storybook→Figma capture for Sorb, the design-token bridge for your running app. (Seed.)",
   "license": "MIT",
   "keywords": [
@@ -35,7 +35,7 @@
     "@babel/generator": "^7.29.7",
     "@babel/parser": "^7.29.7",
     "@babel/traverse": "^7.29.7",
-    "@sorb/core": "^0.2.0",
+    "@sorb/core": "^0.3.0",
     "esbuild": "^0.21.0"
   },
   "peerDependencies": {
