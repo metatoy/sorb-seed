@@ -53,3 +53,10 @@ export { SORB_MAT_SYS_VARS, MAT_SYS_MAP, sorbMatSysVars } from './emit/sorbMatSy
 // PrimeVue v4 preset format (framework-targets-productization T4) — the first
 // JS-emitting target format; generated from `sorb-demo-primevue/src/jjPreset.js`.
 export { SORB_PRIMEVUE_PRESET, PRIMEVUE_ROLE_TREE, sorbPrimevuePreset } from './emit/sorbPrimevue.js'
+
+// WordPress theme.json preset format (framework-targets-productization T9) —
+// ⚠️ STAGED / EXPERIMENTAL, not formally supported yet (founder 2026-08-30).
+// Promoted from `sorb-demo-wordpress/sd-formats/wp-theme-json.js`. The format is
+// exported (structural, kit-agnostic); its `wordpress` TargetAdapter is NOT
+// re-exported from @sorb/leaf's barrel, so it never auto-registers.
+export { SORB_WP_THEME_JSON, sorbWpThemeJson } from './emit/sorbWpThemeJson.js'
