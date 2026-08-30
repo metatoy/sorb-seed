@@ -172,8 +172,7 @@ export default {
 `@theme inline { … }` of `var(--token)` refs — Tailwind utilities
 (`bg-*`/`rounded-*`/…) resolve through the runtime-swappable Sorb vars with
 zero Tailwind-specific app code. Mirrors `sorb-demo-tailwind/sd.config.js`'s
-`tailwind` platform (that repo still registers its own copy pending the T8
-retrofit; the shape is identical).
+`tailwind` platform verbatim.
 
 ### `shadcn` — `sorb/shadcn-theme`
 
@@ -206,9 +205,10 @@ One artifact: shadcn's `:root{}` semantic-var map (`--background`,
 `--primary`, `--ring`, …) chained onto Sorb vars via the role contract,
 followed by the `@theme inline{}` Tailwind-utility bindings (incl. the
 `calc()` radius scale). Import order in your app's entry CSS: `tailwindcss`
-→ `variables.css` (the Sorb tokens) → this file. Replaces the two
-hand-authored files `sorb-demo-tailwind` still carries
-(`shadcn-map.css` + `shadcn-theme.css`).
+→ `variables.css` (the Sorb tokens) → this file. Mirrors
+`sorb-demo-tailwind/sd.config.js`'s `tailwind`/`shadcn` platforms, which
+consume this exact published format (identity `roleMap` — JJ already uses
+canonical role ids).
 
 ### `mantine` — `sorb/mantine-vars`
 
@@ -232,8 +232,9 @@ export default {
 Redeclares Mantine v7's core `--mantine-*` vars as `var(--token) !important`
 refs (`!important` is load-bearing — `MantineProvider` injects its own
 `:root[data-mantine-color-scheme]` stylesheet at runtime, order-unstable
-relative to a static file). Mirrors `sorb-demo-mantine/sd/mantine-format.js`
-(that repo's copy is local/pre-promotion, per its own README note).
+relative to a static file). Mirrors `sorb-demo-mantine/sd.config.js`'s
+`mantine` platform, which now registers this exact published format (T8
+retrofit, superseding its former local `sd/mantine-format.js` spike).
 
 ### `mui` — `sorb/mui-vars`
 
@@ -282,9 +283,9 @@ emits a *second*, later-cascading `:root, [data-mui-color-scheme]` block
 (`!important`) that re-points each covered `--mui-*` var at `var(--token,
 <seed>)` — a Sorb bridge push against `--color-*`/`--radius-*` then cascades
 through with zero MUI reinitialization. Load the generated file **after**
-MUI's own theme stylesheet. Mirrors `sorb-demo-mui/sd.config.js`'s local
-`sorb/mui-vars` format (not yet swapped to this published one — see that
-repo's own promotion-candidate note).
+MUI's own theme stylesheet. Mirrors `sorb-demo-mui/sd.config.js`'s `mui`
+platform, which now registers this exact published format (T8 retrofit)
+wrapped to inject the JJ kit's seed literals via `options.seedValues`.
 
 ### `primevue` — `sorb/primevue-preset`
 
@@ -301,7 +302,7 @@ export default {
       buildPath: 'src/tokens/generated/',
       files: [
         {
-          destination: 'jjPreset.js',
+          destination: 'jjPreset.generated.js',
           format: SORB_PRIMEVUE_PRESET,
           options: {
             // roleMap: { 'button.primary.bg.default': 'my-kit.button.bg' },  // non-JJ kit only
@@ -320,9 +321,10 @@ definePreset(Aura, { semantic: {...}, components: {...} })`) where every
 leaf is a `var(--kebab-token-id)` string (no baked literals). `@primeuix/themes`
 is a **peer expectation**: this format neither installs nor vendors it — the
 consuming PrimeVue v4 app must already have it. Mirrors
-`sorb-demo-primevue/src/jjPreset.js` (hand-authored; PrimeVue had no SD
-format at spike time, so the demo builds the mapping at the preset layer —
-this format generalizes that same recipe).
+`sorb-demo-primevue/sd.config.js`'s `primevue` platform (T8 retrofit): the
+demo's former hand-authored `src/jjPreset.js` is deleted, and `src/main.js`
+now imports `preset` from the generated `jjPreset.generated.js` this format
+produces — same mapping, now data-driven from `PRIMEVUE_ROLE_TREE`.
 
 ### `angular-material` — `sorb/mat-sys-vars`
 
