@@ -129,6 +129,229 @@ Planned: the **plugin materializer** (turns each `LayerNode` into a Figma
 component bound to Variables via `setBoundVariable`); pseudo-elements and
 forced interaction states; component-set assembly from per-story captures.
 
+## Framework target formats
+
+Six framework-specific Style Dictionary formats promoted into `@sorb/seed`
+0.4.0 (framework-targets-productization T1–T5), plus the original
+`sorb/tokenset-esm` (`@sorb/leaf`'s React + Bootstrap target). Register the
+one(s) you need with `StyleDictionary.registerFormat`, then reference it by
+name in a `platforms.<key>.files[]` entry — same mechanics as every other
+`sorb/*` format above.
+
+**Semantic-role contract.** Every format below resolves a small set of
+canonical role ids (`color.brand`, `color.surface`, `radius.control`, …) to
+your kit's actual token ids via `options.roleMap` (`Record<roleId,
+tokenId>`). **Omit `roleMap` and it defaults to identity** — correct out of
+the box for a kit that already uses the canonical role ids as its own token
+ids (the reference `janes-jeans` kit does). A kit with different ids for
+the same concepts supplies overrides, e.g. `roleMap: { 'color.brand':
+'jj.brand.500' }`. `sorb/tailwind-theme` is the one exception — it maps
+every resolved token 1:1 into Tailwind theme keys mechanically, so it takes
+no `roleMap`.
+
+### `tailwind-v4` — `sorb/tailwind-theme`
+
+```js
+import StyleDictionary from 'style-dictionary'
+import { SORB_TAILWIND, sorbTailwind } from '@sorb/seed'
+
+StyleDictionary.registerFormat({ name: SORB_TAILWIND, format: sorbTailwind })
+
+export default {
+  // ...source, parsers, other platforms
+  platforms: {
+    tailwind: {
+      transformGroup: 'css', // kebab names so var() refs match the css platform
+      buildPath: 'src/tokens/generated/',
+      files: [{ destination: 'tailwind-theme.css', format: SORB_TAILWIND }],
+    },
+  },
+}
+```
+
+`@theme inline { … }` of `var(--token)` refs — Tailwind utilities
+(`bg-*`/`rounded-*`/…) resolve through the runtime-swappable Sorb vars with
+zero Tailwind-specific app code. Mirrors `sorb-demo-tailwind/sd.config.js`'s
+`tailwind` platform (that repo still registers its own copy pending the T8
+retrofit; the shape is identical).
+
+### `shadcn` — `sorb/shadcn-theme`
+
+```js
+import StyleDictionary from 'style-dictionary'
+import { SORB_SHADCN, sorbShadcn } from '@sorb/seed'
+
+StyleDictionary.registerFormat({ name: SORB_SHADCN, format: sorbShadcn })
+
+export default {
+  platforms: {
+    shadcn: {
+      transformGroup: 'css',
+      buildPath: 'src/tokens/generated/',
+      files: [
+        {
+          destination: 'shadcn-theme.css',
+          format: SORB_SHADCN,
+          options: {
+            // roleMap: { 'color.brand': 'my-kit.brand' },  // non-JJ kit only
+          },
+        },
+      ],
+    },
+  },
+}
+```
+
+One artifact: shadcn's `:root{}` semantic-var map (`--background`,
+`--primary`, `--ring`, …) chained onto Sorb vars via the role contract,
+followed by the `@theme inline{}` Tailwind-utility bindings (incl. the
+`calc()` radius scale). Import order in your app's entry CSS: `tailwindcss`
+→ `variables.css` (the Sorb tokens) → this file. Replaces the two
+hand-authored files `sorb-demo-tailwind` still carries
+(`shadcn-map.css` + `shadcn-theme.css`).
+
+### `mantine` — `sorb/mantine-vars`
+
+```js
+import StyleDictionary from 'style-dictionary'
+import { SORB_MANTINE_VARS, sorbMantineVars } from '@sorb/seed'
+
+StyleDictionary.registerFormat({ name: SORB_MANTINE_VARS, format: sorbMantineVars })
+
+export default {
+  platforms: {
+    mantine: {
+      transformGroup: 'css',
+      buildPath: 'src/tokens/generated/',
+      files: [{ destination: 'mantine-vars.css', format: SORB_MANTINE_VARS }],
+    },
+  },
+}
+```
+
+Redeclares Mantine v7's core `--mantine-*` vars as `var(--token) !important`
+refs (`!important` is load-bearing — `MantineProvider` injects its own
+`:root[data-mantine-color-scheme]` stylesheet at runtime, order-unstable
+relative to a static file). Mirrors `sorb-demo-mantine/sd/mantine-format.js`
+(that repo's copy is local/pre-promotion, per its own README note).
+
+### `mui` — `sorb/mui-vars`
+
+```js
+import StyleDictionary from 'style-dictionary'
+import { SORB_MUI_VARS, sorbMuiVars } from '@sorb/seed'
+
+StyleDictionary.registerFormat({ name: SORB_MUI_VARS, format: sorbMuiVars })
+
+export default {
+  platforms: {
+    mui: {
+      transformGroup: 'css',
+      buildPath: 'src/tokens/generated/',
+      files: [
+        {
+          destination: 'mui-vars.css',
+          format: SORB_MUI_VARS,
+          options: {
+            // roleMap: { 'color.brand': 'my-kit.brand' },  // non-JJ kit only
+            seedValues: {
+              // REQUIRED — MUI's createTheme({ cssVariables: true }) needs a real
+              // color to compute contrast/tonal variants; a role with no entry
+              // here emits var(--token) with NO fallback. These are seed/fallback
+              // literals only, never the values a live preview push resolves to.
+              'color.brand': '#1976d2',
+              'color.brand-hover': '#1565c0',
+              'color.brand-contrast': '#fff',
+              'color.accent': '#9c27b0',
+              'color.danger': '#d32f2f',
+              'color.success': '#2e7d32',
+              'color.surface': '#fff',
+              'color.ink': 'rgba(0,0,0,0.87)',
+              'radius.control': '4px',
+            },
+          },
+        },
+      ],
+    },
+  },
+}
+```
+
+MUI computes its own `--mui-*` vars from these seed values, and this format
+emits a *second*, later-cascading `:root, [data-mui-color-scheme]` block
+(`!important`) that re-points each covered `--mui-*` var at `var(--token,
+<seed>)` — a Sorb bridge push against `--color-*`/`--radius-*` then cascades
+through with zero MUI reinitialization. Load the generated file **after**
+MUI's own theme stylesheet. Mirrors `sorb-demo-mui/sd.config.js`'s local
+`sorb/mui-vars` format (not yet swapped to this published one — see that
+repo's own promotion-candidate note).
+
+### `primevue` — `sorb/primevue-preset`
+
+```js
+import StyleDictionary from 'style-dictionary'
+import { SORB_PRIMEVUE_PRESET, sorbPrimevuePreset } from '@sorb/seed'
+
+StyleDictionary.registerFormat({ name: SORB_PRIMEVUE_PRESET, format: sorbPrimevuePreset })
+
+export default {
+  platforms: {
+    primevue: {
+      transformGroup: 'css',
+      buildPath: 'src/tokens/generated/',
+      files: [
+        {
+          destination: 'jjPreset.js',
+          format: SORB_PRIMEVUE_PRESET,
+          options: {
+            // roleMap: { 'button.primary.bg.default': 'my-kit.button.bg' },  // non-JJ kit only
+            // basePreset: 'Aura',  // default; also: 'Material' | 'Lara' | 'Nora'
+          },
+        },
+      ],
+    },
+  },
+}
+```
+
+The **only JS-emitting** target format — writes an ESM module
+(`import { definePreset } from '@primeuix/themes'; export const preset =
+definePreset(Aura, { semantic: {...}, components: {...} })`) where every
+leaf is a `var(--kebab-token-id)` string (no baked literals). `@primeuix/themes`
+is a **peer expectation**: this format neither installs nor vendors it — the
+consuming PrimeVue v4 app must already have it. Mirrors
+`sorb-demo-primevue/src/jjPreset.js` (hand-authored; PrimeVue had no SD
+format at spike time, so the demo builds the mapping at the preset layer —
+this format generalizes that same recipe).
+
+### `angular-material` — `sorb/mat-sys-vars`
+
+```js
+import StyleDictionary from 'style-dictionary'
+import { SORB_MAT_SYS_VARS, sorbMatSysVars } from '@sorb/seed'
+
+StyleDictionary.registerFormat({ name: SORB_MAT_SYS_VARS, format: sorbMatSysVars })
+
+export default {
+  platforms: {
+    matSys: {
+      transformGroup: 'css',
+      buildPath: 'src/tokens/generated/',
+      files: [{ destination: 'mat-sys-overrides.css', format: SORB_MAT_SYS_VARS }],
+    },
+  },
+}
+```
+
+Remaps ~30 of Angular Material 20's M3 `--mat-sys-*` system vars (emitted by
+the `mat.theme()` mixin) onto your kit's `var(--token) !important` refs.
+Import **after** both your kit's own `variables.css` and Angular Material's
+own theme styles — `!important` is required, not decorative (Material's
+`html{}` theme rule isn't guaranteed to precede this file in the cascade).
+Mirrors `sorb-demo-angular/sd.config.js`'s local `SORB_MAT_SYS_VARS` +
+`MAT_SYS_MAP` (flagged there as a promotion candidate; this is that
+promotion).
+
 ---
 
 **Sorb™** is a trademark of Metatoy LLC.
