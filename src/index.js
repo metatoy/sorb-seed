@@ -40,3 +40,12 @@ export { SORB_MANTINE_VARS, MANTINE_VAR_MAP, sorbMantineVars } from './emit/sorb
 // shadcn/ui theme format (framework-targets-productization T1) — promoted
 // from `sorb-demo-tailwind`'s hand-authored `shadcn-map.css`+`shadcn-theme.css`.
 export { SORB_SHADCN, sorbShadcn, shadcnRootLines, shadcnThemeInlineLines } from './emit/sorbShadcn.js'
+
+// MUI v6 CSS-var override format (framework-targets-productization T3) —
+// promoted from `sorb-demo-mui/sd.config.js:18-86`.
+export { SORB_MUI_VARS, MUI_VAR_MAP, sorbMuiVars } from './emit/sorbMui.js'
+
+// Angular Material 20 M3 system-variable override format
+// (framework-targets-productization T5) — promoted from
+// `sorb-demo-angular/sd.config.js:96-113`.
+export { SORB_MAT_SYS_VARS, MAT_SYS_MAP, sorbMatSysVars } from './emit/sorbMatSys.js'
