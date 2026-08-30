@@ -36,3 +36,7 @@ export {
 // Mantine v7 CSS-var override format (framework-targets-productization T2) —
 // promoted from `sorb-demo-mantine/sd/mantine-format.js`.
 export { SORB_MANTINE_VARS, MANTINE_VAR_MAP, sorbMantineVars } from './emit/sorbMantine.js'
+
+// shadcn/ui theme format (framework-targets-productization T1) — promoted
+// from `sorb-demo-tailwind`'s hand-authored `shadcn-map.css`+`shadcn-theme.css`.
+export { SORB_SHADCN, sorbShadcn, shadcnRootLines, shadcnThemeInlineLines } from './emit/sorbShadcn.js'
