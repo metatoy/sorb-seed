@@ -1,6 +1,6 @@
 {
   "name": "@sorb/seed",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Storybook→Figma capture for Sorb, the design-token bridge for your running app. (Seed.)",
   "license": "MIT",
   "keywords": [

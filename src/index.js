@@ -53,3 +53,14 @@ export { SORB_MAT_SYS_VARS, MAT_SYS_MAP, sorbMatSysVars } from './emit/sorbMatSy
 // PrimeVue v4 preset format (framework-targets-productization T4) — the first
 // JS-emitting target format; generated from `sorb-demo-primevue/src/jjPreset.js`.
 export { SORB_PRIMEVUE_PRESET, PRIMEVUE_ROLE_TREE, sorbPrimevuePreset } from './emit/sorbPrimevue.js'
+
+// Legacy-React adapter surface (roadmap §6 / tokenize-repo P0). The static
+// hardcoded-literal detector + the SAME normalizers the capture binder uses, so
+// downstream consumers (e.g. sorb-cloud's tokenize pipeline) flag exactly the
+// values the matcher would bind — no drift. JS-AST/regex only; never executes
+// consumer code. The value-normalizers (`normalizeColor`/`normalizeDimension`)
+// are the contract the cloud CSS/SCSS scanner shares so JS and CSS sites cluster
+// on identical canonical values.
+export { detectHardcoded, propToRole, parseSource } from './adapt/detectHardcoded.js'
+export { normalizeColor, normalizeDimension, classifyColor } from './annotateTokens.js'
+export { mapToToken, statusFor, resolveCssVar, AUTO_THRESHOLD } from './adapt/mapToToken.js'
