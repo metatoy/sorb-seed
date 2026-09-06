@@ -5,33 +5,30 @@ Storybook→Figma capture for Sorb™, the design-token bridge for your running 
 This package holds the **heavy** pieces (esbuild now; Playwright later)
 so the bridge (`@sorb/juice`) and `@sorb/leaf` stay lean.
 
-The full design lives in the team's internal spec (kept out of the repo).
+Full docs: **[sorbcloud.com/docs/packages/seed](https://www.sorbcloud.com/docs/packages/seed)**.
 
-## Install & link the CLI
+## Install
 
-This package is **private / not published to npm yet**, so there's no
-`npm i @sorb/seed`. To get the `sorb-seed` command working:
-
-```bash
-# 1. install this package's deps (from this directory)
-cd sorb-seed
-npm install                 # pulls esbuild (Playwright is optional — see capture)
-
-# 2. expose the `sorb-seed` bin on your PATH
-npm link                    # creates a global symlink to bin → src/cli.js
-```
-
-`sorb-seed` is now runnable from anywhere. To remove the global symlink
-later: `npm unlink -g @sorb/seed` (or `npm rm -g @sorb/seed`).
-
-**Prefer not to touch your global PATH?** Skip `npm link` and invoke the source
-directly from the consuming app:
+`@sorb/seed` is published on npm — installing it (usually as a dev dependency
+alongside `@sorb/juice` and `style-dictionary`) exposes the `sorb-seed` CLI
+via your package manager's bin shim, no `npm link` needed:
 
 ```bash
-node /abs/path/to/sorb-seed/src/cli.js resolve
+npm install -D @sorb/seed style-dictionary
+npx sorb-seed resolve
 ```
 
-The CLI has exactly two commands — **`resolve`** and **`capture`** — plus
+**Prefer a global install or a checkout you're developing against?**
+
+```bash
+npm install -g @sorb/seed      # exposes `sorb-seed` on your PATH globally
+# — or, from a local checkout —
+npm link                       # from this package dir: symlinks the bin here
+node /abs/path/to/sorb-seed/src/cli.js resolve   # or invoke the source directly
+```
+
+The CLI has five commands — **`resolve`** (default), **`capture`**, **`adapt`**,
+**`variant <add|deprecate>`**, and the internal **`render-worker`** — plus
 `sorb-seed --help` / `-h` (usage) and `sorb-seed --version` / `-v`. (There is
 **no** `annotate` command: `annotateTree`/`annotateTokens` is the internal
 binder `capture` calls, not a CLI verb.)
@@ -39,11 +36,11 @@ binder `capture` calls, not a CLI verb.)
 > **Where you run it matters.** `sorb-seed` reads `sorb.config.json`,
 > `sd.config.js`, and `tokens/` from the **current working directory** — i.e.
 > your *app* (e.g. `example/`), **not** this package directory. Run the commands
-> below from the app you're capturing, after `npm link`ing here once.
+> below from the app you're capturing.
 
 ## Status
 
-Early — not yet published (`private`). Implemented so far:
+Published (`@sorb/seed` 0.5.0). Implemented so far:
 
 - **`sorb-seed resolve`** — a thin wrapper around **Style Dictionary**. The
   DTCG token sets (`tokens/{primitive,semantic,component}.json`) are the source
@@ -128,6 +125,55 @@ ranking (component > semantic > primitive).
 Planned: the **plugin materializer** (turns each `LayerNode` into a Figma
 component bound to Variables via `setBoundVariable`); pseudo-elements and
 forced interaction states; component-set assembly from per-story captures.
+
+## Adapt: find hardcoded styles in a legacy app and map them to tokens
+
+**`sorb-seed adapt`** (`src/adapt/adaptCli.js`) scans an existing React
+codebase for hardcoded color/dimension style literals and maps each one to
+the nearest token in your resolved map — the on-ramp for a codebase that
+predates Sorb.
+
+```bash
+sorb-seed adapt                                    # report mode, default glob
+sorb-seed adapt --src 'src/**/*.{jsx,tsx}'          # scan a narrower glob
+sorb-seed adapt --resolved .sorb/resolved.json      # resolved map to map against (default shown)
+sorb-seed adapt --mode codemod --write              # rewrite matched sites in place
+```
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--src <glob>` | `src/**/*.{jsx,tsx,js,ts}` | Source files to scan. |
+| `--resolved <path>` | `.sorb/resolved.json` | Resolved token map to map hits against. |
+| `--mode <report\|shim\|codemod>` | `report` | `report` scores and writes `.sorb/adapt-report.json`; `shim` emits a runtime-shim payload; `codemod` rewrites matched literals to `var(--token)`. |
+| `--write` | off | `codemod` mode only — actually rewrite source files (otherwise a dry run). |
+
+It detects three shapes of hardcoded style: JSX inline `style={{ backgroundColor: '#0F65EF' }}`,
+styled-components template literals, and plain CSS-Module-style objects. A
+value already written as `var(--…)` is never flagged.
+
+**Confidence model.** Each detected site scores `auto` (1.0 — one on-role
+candidate, unambiguous), `review` (0.6 — bound but ambiguous: off-role or
+multiple candidates), or `unmapped` (0 — no token matched). `--mode codemod`
+only ever rewrites `auto`-status sites; `review`/`unmapped` sites stay in the
+report for a human to resolve.
+
+Library exports for scripting the adapter yourself (all from `@sorb/seed`):
+
+| Export | Signature | What it does |
+|---|---|---|
+| `detectHardcoded` | `(source, filename) => AdaptSite[]` | Parse one file's source (Babel AST) and return every detected hardcoded style site. |
+| `propToRole` | `(prop) => AdaptRole` | Map a CSS/JSX property name to a matcher role (`bg`/`text`/`border`/`radius`/`null`). |
+| `parseSource` | `(source) => babel.Node` | Parse source into a Babel AST (jsx + typescript plugins, error-recovering). |
+| `mapToToken` | `(site, index, resolved?) => AdaptMapping` | Map one detected site to its nearest resolved token + a confidence score. |
+| `statusFor` | `(mapping) => 'auto'\|'review'\|'unmapped'` | Turn a mapping's confidence into a report status via `AUTO_THRESHOLD`. |
+| `resolveCssVar` | `(tokenId, resolved?) => string` | Look up (or derive) a token id's `--css-var`. |
+| `AUTO_THRESHOLD` | `0.9` | The confidence cut between `auto` and `review` — the single explicit threshold. |
+| `normalizeColor` / `normalizeDimension` / `classifyColor` | — | The same value normalizers the capture binder uses, shared here so a value the matcher would bind is exactly a value `adapt` flags — no drift. |
+
+Typedefs (`AdaptSite`, `AdaptMapping`, `AdaptRow`, `AdaptRole`, plus
+`DetectHardcodedResult`/`MapToTokenResult` result aliases and the per-format
+`options` shapes) live in [`src/types.js`](./src/types.js) and
+[`src/adapt/types.js`](./src/adapt/types.js).
 
 ## Framework target formats
 
@@ -355,5 +401,13 @@ Mirrors `sorb-demo-angular/sd.config.js`'s local `SORB_MAT_SYS_VARS` +
 promotion).
 
 ---
+
+## Related packages
+
+- [`@sorb/core`](https://www.sorbcloud.com/docs/packages/core) — the shared contract
+- [`@sorb/juice`](https://www.sorbcloud.com/docs/packages/juice) — the bridge server / CLI
+- [`@sorb/leaf`](https://www.sorbcloud.com/docs/packages/leaf) — the React SDK
+
+Full docs: [sorbcloud.com/docs/packages/seed](https://www.sorbcloud.com/docs/packages/seed).
 
 **Sorb™** is a trademark of Metatoy LLC.
