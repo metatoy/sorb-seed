@@ -74,11 +74,19 @@ export function rewriteSource(source, fileRows) {
     },
     // Styled-components template quasis: rewrite the literal substring in-place.
     TemplateElement(path) {
-      const k = keyOf(path.node)
-      if (!k) return
+      const loc = path.node.loc
+      if (!loc) return
       // A quasi can host several sites (multiple declarations); match all rows
-      // whose loc points at this quasi.
-      const rows = fileRows.filter((r) => `${r.loc.line}:${r.loc.column}` === k)
+      // whose loc falls INSIDE this quasi. Since 0.5.1 a template site carries
+      // its true line/column (not the quasi's start), so match by span.
+      const inside = (r) => {
+        const { line, column } = r.loc
+        if (line < loc.start.line || line > loc.end.line) return false
+        if (line === loc.start.line && column < loc.start.column) return false
+        if (line === loc.end.line && column > loc.end.column) return false
+        return true
+      }
+      const rows = fileRows.filter(inside)
       if (!rows.length) return
       let cooked = path.node.value.cooked != null ? path.node.value.cooked : path.node.value.raw
       let raw = path.node.value.raw
