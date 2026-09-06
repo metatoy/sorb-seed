@@ -156,6 +156,21 @@ export const runCapture = async (opts) => {
     JSON.stringify(indexOut, null, 2) + '\n',
   )
   console.log('→ .sorb/index.json')
+
+  // 4. Optional: `--upload` pushes the bundle we just wrote to Sorb Cloud as
+  // pure data (storybook-capture-hosting.md §3). Same path as `push-capture`.
+  if (opts.upload) {
+    const { runPushCapture, UploadError } = await import('./uploadBundle.js')
+    try {
+      await runPushCapture({ cwd, flags: opts.uploadFlags || {} })
+    } catch (e) {
+      if (e instanceof UploadError) {
+        console.error('✗', e.message)
+        process.exit(e.exitCode || 1)
+      }
+      throw e
+    }
+  }
 }
 
 const relativeFromCwd = (abs) => {
@@ -175,6 +190,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const opts = {}
   for (const a of process.argv.slice(2)) {
     if (a === '--changed') opts.changed = true
+    else if (a === '--upload') opts.upload = true
     else if (a.startsWith('--only=')) opts.only = a.slice('--only='.length)
     else if (a.startsWith('--storybook-url=')) opts.storybookUrl = a.slice('--storybook-url='.length)
   }
