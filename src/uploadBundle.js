@@ -12,7 +12,7 @@
 // them as opaque ids (never paths). We only ever READ the files the index names,
 // and only when they resolve under cwd.
 
-import { readFileSync, existsSync } from 'fs'
+import { readFileSync, existsSync, realpathSync } from 'fs'
 import { resolve, relative, isAbsolute, sep } from 'path'
 import { execSync } from 'child_process'
 
@@ -114,7 +114,15 @@ export const makeArtifactReader = (cwd) => (key) => {
   if (!existsSync(abs)) {
     throw new UploadError('artifact_missing', `Artifact named by .sorb/index.json is missing: ${key} (re-run \`sorb-seed capture\`, or commit the *.sorb.json files for CI).`)
   }
-  return JSON.parse(readFileSync(abs, 'utf-8'))
+  // The lexical check above validates the STRING; a committed symlink (e.g. from a
+  // hostile PR branch in CI) could still point outside the project. Re-check the
+  // REAL path so we never read (and upload) a file that isn't physically under cwd.
+  const realCwd = realpathSync(cwd)
+  const realAbs = realpathSync(abs)
+  if (!isUnder(realCwd, realAbs)) {
+    throw new UploadError('artifact_outside_project', `Refusing to read an artifact that resolves outside the project directory (symlink?): ${key}`)
+  }
+  return JSON.parse(readFileSync(realAbs, 'utf-8'))
 }
 
 /**

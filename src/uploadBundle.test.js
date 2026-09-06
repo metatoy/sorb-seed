@@ -5,7 +5,7 @@
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -139,6 +139,20 @@ test('makeArtifactReader: reads only under cwd — traversal, absolute, backslas
   assert.throws(() => read(''), (e) => e.code === 'bad_artifact_ref')
   assert.throws(() => read('stories/Nope.sorb.json'), (e) => e.code === 'artifact_missing')
   rmSync(dir, { recursive: true, force: true })
+})
+
+test('makeArtifactReader: a symlink that points OUTSIDE cwd is refused even though its path string is under cwd', () => {
+  const { dir } = makeProject()
+  const outside = mkdtempSync(join(tmpdir(), 'sorb-seed-outside-'))
+  writeFileSync(join(outside, 'secret.json'), JSON.stringify({ secret: true }))
+  symlinkSync(join(outside, 'secret.json'), join(dir, 'stories', 'Linked.sorb.json'))
+  const read = makeArtifactReader(dir)
+  assert.throws(() => read('stories/Linked.sorb.json'), (e) => e.code === 'artifact_outside_project' && /symlink/.test(e.message))
+  // A symlink that stays INSIDE the project is fine.
+  symlinkSync(join(dir, 'stories', 'Button.sorb.json'), join(dir, 'stories', 'Alias.sorb.json'))
+  assert.equal(read('stories/Alias.sorb.json').component, 'Button')
+  rmSync(dir, { recursive: true, force: true })
+  rmSync(outside, { recursive: true, force: true })
 })
 
 // ── upload ────────────────────────────────────────────────────────────────────
