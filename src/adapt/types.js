@@ -18,6 +18,11 @@
  * @property {string} prop              The CSS/JSX property name as written (e.g. 'backgroundColor', 'border-radius').
  * @property {string} raw              The raw literal value as written (e.g. '#0F65EF', '4px', '4').
  * @property {AdaptRole} role          Property→role mapping (bg/text/border/radius) or null.
+ * @property {string} [group]          Block identity (0.5.1): `obj@{start}` for a style-object
+ *                                     property, `tpl@{start}:b{N}` for a template-literal block
+ *                                     (b0 = top level). Sites sharing a group sit in the same rule.
+ * @property {string} [parent]         The enclosing block's `group`, when nested.
+ * @property {string} [label]          Readable block label (`style`, `styled.button`, `&:hover`).
  */
 
 /**
