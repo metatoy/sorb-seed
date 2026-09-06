@@ -99,6 +99,45 @@ Early — not yet published (`private`). Implemented so far:
   }
   ```
 
+  ### Upload the capture to Sorb Cloud (hosted Storybook)
+
+  The same `.sorb/index.json` + `*.sorb.json` + `.sorb/resolved.json` files can
+  be uploaded to Sorb Cloud as **pure data** — the cloud validates the JSON and
+  renders per-story previews + the Bound Tokens panel from it. Nothing from your
+  repo is cloned, installed, built, or executed on Sorb infrastructure; the
+  Storybook build and the Playwright capture always run on **your** machine/CI.
+
+  ```bash
+  # capture and upload in one go
+  SORB_CLOUD_KEY=sorb_sk_… SORB_CLOUD_PROJECT=<project-uuid> sorb-seed capture --upload
+
+  # or upload already-captured, committed artifacts (no Playwright needed — the CI path)
+  SORB_CLOUD_KEY=sorb_sk_… SORB_CLOUD_PROJECT=<project-uuid> sorb-seed push-capture
+  ```
+
+  Settings (flag > env > `sorb.config.json`): `--project=<uuid>` /
+  `SORB_CLOUD_PROJECT` / `"cloud": { "projectId": "…" }`; `--cloud-url=<url>` /
+  `SORB_CLOUD_URL` (default `https://app.sorbcloud.com`). The API key is read
+  from **`SORB_CLOUD_KEY` only** and must be a `sorb_sk_…` **secret** key
+  (publishable `sorb_pk_` keys are read-only and get a 403) — never put keys in
+  `sorb.config.json`. `sourceSha` is stamped from `GITHUB_SHA`, else
+  `git rev-parse HEAD`, best-effort. The cloud keeps the newest 10 bundles per
+  project; the upload is capped at 5 MB / 200 artifacts / 500 stories.
+
+  GitHub Actions — build Storybook, capture with Playwright, upload:
+
+  ```yaml
+  - run: npm ci && npx playwright install --with-deps chromium
+  - run: npx storybook build && (npx http-server storybook-static -p 6006 &) && npx wait-on http://localhost:6006
+  - run: npx sorb-seed resolve && npx sorb-seed capture --upload --storybook-url=http://localhost:6006
+    env:
+      SORB_CLOUD_KEY: ${{ secrets.SORB_CLOUD_KEY }}     # sorb_sk_… secret key
+      SORB_CLOUD_PROJECT: ${{ vars.SORB_CLOUD_PROJECT }}
+  ```
+
+  If you commit the `*.sorb.json` artifacts and `.sorb/index.json`, the last
+  step can simply be `npx sorb-seed push-capture` (no browser in CI at all).
+
   The captured artifacts are then served by the bridge at
   `GET http://localhost:7777/artifacts` (the index) and
   `GET http://localhost:7777/artifact?id=<storyId>` (one artifact, looked up

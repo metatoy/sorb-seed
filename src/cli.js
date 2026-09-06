@@ -44,6 +44,10 @@ Commands:
   capture            Visit each Storybook story with Playwright, capture the
                      rendered tree, and annotate it against the resolved token
                      map → per-component *.sorb.json + .sorb/index.json.
+                     Add --upload to push the bundle to Sorb Cloud afterwards.
+  push-capture       Upload the already-captured .sorb/index.json + *.sorb.json
+                     (+ .sorb/resolved.json) to Sorb Cloud as pure data — no
+                     Playwright needed; the CI-friendly path.
   render-worker      Hosted-capture on-demand render worker (Mode B / E3):
                      reads RenderJobInput job(s) as NDJSON on stdin (or
                      --job=/--job-file=), renders each against a URL + token
@@ -64,6 +68,16 @@ capture options:
   --storybook-url=<url>
                      Storybook base URL (default: sorb.config.json seed.storybookUrl
                      or http://localhost:6006).
+  --upload           After capturing, upload the bundle (same as push-capture).
+
+push-capture / --upload options:
+  --project=<uuid>   Sorb Cloud project id (or SORB_CLOUD_PROJECT, or
+                     sorb.config.json "cloud": { "projectId" }).
+  --cloud-url=<url>  Cloud base URL (or SORB_CLOUD_URL; default
+                     https://app.sorbcloud.com).
+  SORB_CLOUD_KEY     env var ONLY — a sorb_sk_… SECRET key (never put keys in
+                     sorb.config.json; publishable sorb_pk_ keys can't upload).
+  sourceSha is taken from GITHUB_SHA, else \`git rev-parse HEAD\`, best-effort.
 
 Global:
   -h, --help         Show this help and exit.
@@ -99,13 +113,31 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
   }
 } else if (cmd === 'capture') {
   const { runCapture } = await import('./captureCli.js')
-  const opts = {}
-  for (const a of process.argv.slice(3)) {
+  const { parseUploadFlags } = await import('./uploadBundle.js')
+  const { flags: uploadFlags, rest } = parseUploadFlags(process.argv.slice(3))
+  const opts = { uploadFlags }
+  for (const a of rest) {
     if (a === '--changed') opts.changed = true
+    else if (a === '--upload') opts.upload = true
     else if (a.startsWith('--only=')) opts.only = a.slice('--only='.length)
     else if (a.startsWith('--storybook-url=')) opts.storybookUrl = a.slice('--storybook-url='.length)
   }
   await runCapture(opts)
+} else if (cmd === 'push-capture') {
+  // Upload the already-captured bundle (no Playwright) — the CI path. The key
+  // is read from SORB_CLOUD_KEY only; see `sorb-seed --help`.
+  const { runPushCapture, parseUploadFlags, UploadError } = await import('./uploadBundle.js')
+  const { flags } = parseUploadFlags(process.argv.slice(3))
+  try {
+    await runPushCapture({ cwd, flags })
+  } catch (e) {
+    if (e instanceof UploadError) {
+      console.error('✗', e.message)
+      process.exit(e.exitCode || 1)
+    }
+    console.error('✗ push-capture failed:', e && e.message ? e.message : e)
+    process.exit(1)
+  }
 } else if (cmd === 'render-worker') {
   const { main: renderWorkerMain } = await import('./render/cli.js')
   await renderWorkerMain(process.argv)
@@ -243,9 +275,10 @@ if (cmd === '--help' || cmd === '-h' || cmd === 'help') {
 } else {
   console.error(
     `Unknown command: ${cmd}\n` +
-    `Usage: sorb-seed <resolve|capture|render-worker|variant|adapt> [options]\n` +
+    `Usage: sorb-seed <resolve|capture|push-capture|render-worker|variant|adapt> [options]\n` +
     `  resolve                 build .sorb/resolved.json from DTCG sources (Style Dictionary)\n` +
-    `  capture [--changed]     headless Storybook → Figma capture\n` +
+    `  capture [--changed] [--upload]  headless Storybook → Figma capture (+ upload to Sorb Cloud)\n` +
+    `  push-capture            upload the committed .sorb/ bundle to Sorb Cloud (CI; no Playwright)\n` +
     `  render-worker           internal render worker (variant preview rendering)\n` +
     `  variant <add|deprecate> manage component variants\n` +
     `  adapt   [--src <glob>] [--resolved <path>] [--mode report|shim|codemod] [--write]\n` +

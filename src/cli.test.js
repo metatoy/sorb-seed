@@ -49,3 +49,32 @@ test('unknown command exits 1 and points at --help', () => {
   assert.match(r.stderr, /Unknown command: bogus/)
   assert.match(r.stderr, /--help/)
 })
+
+// ── push-capture (storybook-capture-hosting.md §3) ───────────────────────────
+
+test('--help documents push-capture, --upload, and the env-only SORB_CLOUD_KEY rule', () => {
+  const r = run(['--help'])
+  assert.equal(r.status, 0)
+  assert.match(r.stdout, /\bpush-capture\b/)
+  assert.match(r.stdout, /--upload/)
+  assert.match(r.stdout, /SORB_CLOUD_KEY/)
+  assert.match(r.stdout, /never put keys in\s+sorb\.config\.json/)
+})
+
+test('push-capture without SORB_CLOUD_KEY exits 1 with the missing-key message before any network', () => {
+  const env = { ...process.env, SORB_CLOUD_PROJECT: '0b8e6a3e-3f2c-4c9e-9a4b-2d1f0c7e5a10' }
+  delete env.SORB_CLOUD_KEY
+  const r = spawnSync(process.execPath, [CLI, 'push-capture'], { encoding: 'utf-8', env, cwd: here })
+  assert.equal(r.status, 1)
+  assert.match(r.stderr, /SORB_CLOUD_KEY/)
+  assert.match(r.stderr, /sorb_sk_/)
+})
+
+test('push-capture without a project id exits 1 and names the three ways to set it', () => {
+  const env = { ...process.env, SORB_CLOUD_KEY: 'sorb_sk_test' }
+  delete env.SORB_CLOUD_PROJECT
+  const r = spawnSync(process.execPath, [CLI, 'push-capture'], { encoding: 'utf-8', env, cwd: here })
+  assert.equal(r.status, 1)
+  assert.match(r.stderr, /--project=<uuid>/)
+  assert.match(r.stderr, /SORB_CLOUD_PROJECT/)
+})
