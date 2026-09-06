@@ -13,7 +13,7 @@ import { mapToToken, statusFor, AUTO_THRESHOLD, resolveCssVar } from './mapToTok
 const here = dirname(fileURLToPath(import.meta.url))
 const RESOLVED = JSON.parse(
   readFileSync(
-    join(here, '..', '..', '..', 'sorb-demo', '.sorb', 'resolved.json'),
+    join(here, '__fixtures__', 'sorb-demo.resolved.json'),
     'utf-8',
   ),
 )

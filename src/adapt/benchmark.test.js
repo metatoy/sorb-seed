@@ -12,7 +12,7 @@ import { benchmark, scoreCase, loadCorpus, formatReport } from './benchmark.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const RESOLVED = JSON.parse(
-  readFileSync(join(here, '..', '..', '..', 'sorb-demo', '.sorb', 'resolved.json'), 'utf-8'),
+  readFileSync(join(here, '__fixtures__', 'sorb-demo.resolved.json'), 'utf-8'),
 )
 const index = buildTokenIndex(RESOLVED)
 

@@ -1,0 +1,730 @@
+[
+  {
+    "id": "color.white",
+    "cssVar": "--color-white",
+    "value": "#ffffff",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.black",
+    "cssVar": "--color-black",
+    "value": "#000000",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.transparent",
+    "cssVar": "--color-transparent",
+    "value": "rgba(0, 0, 0, 0)",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.blue.50",
+    "cssVar": "--color-blue-50",
+    "value": "#e7f0fd",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.blue.100",
+    "cssVar": "--color-blue-100",
+    "value": "#c9d8fc",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.blue.300",
+    "cssVar": "--color-blue-300",
+    "value": "#4588f3",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.blue.500",
+    "cssVar": "--color-blue-500",
+    "value": "#0f65ef",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.blue.700",
+    "cssVar": "--color-blue-700",
+    "value": "#083884",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.blue.900",
+    "cssVar": "--color-blue-900",
+    "value": "#0c4eb9",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.50",
+    "cssVar": "--color-gray-50",
+    "value": "#f4f4f4",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.100",
+    "cssVar": "--color-gray-100",
+    "value": "#ededed",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.300",
+    "cssVar": "--color-gray-300",
+    "value": "#d7d7d7",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.500",
+    "cssVar": "--color-gray-500",
+    "value": "#aaaaaa",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.700",
+    "cssVar": "--color-gray-700",
+    "value": "#757575",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.800",
+    "cssVar": "--color-gray-800",
+    "value": "#666666",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.900",
+    "cssVar": "--color-gray-900",
+    "value": "#333333",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.gray.950",
+    "cssVar": "--color-gray-950",
+    "value": "#222222",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.red.50",
+    "cssVar": "--color-red-50",
+    "value": "#fdece9",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.red.500",
+    "cssVar": "--color-red-500",
+    "value": "#ee3322",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.red.700",
+    "cssVar": "--color-red-700",
+    "value": "#b81a21",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.green.500",
+    "cssVar": "--color-green-500",
+    "value": "#68af15",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.green.700",
+    "cssVar": "--color-green-700",
+    "value": "#618910",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.orange.300",
+    "cssVar": "--color-orange-300",
+    "value": "#b54708",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.orange.500",
+    "cssVar": "--color-orange-500",
+    "value": "#f47f16",
+    "tier": "primitive",
+    "type": "color"
+  },
+  {
+    "id": "color.action.primary",
+    "cssVar": "--color-action-primary",
+    "value": "#0f65ef",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.action.primary-hover",
+    "cssVar": "--color-action-primary-hover",
+    "value": "#083884",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.text.primary",
+    "cssVar": "--color-text-primary",
+    "value": "#222222",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.text.secondary",
+    "cssVar": "--color-text-secondary",
+    "value": "#757575",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.text.on-action",
+    "cssVar": "--color-text-on-action",
+    "value": "#ffffff",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.text.disabled",
+    "cssVar": "--color-text-disabled",
+    "value": "#aaaaaa",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.bg.surface",
+    "cssVar": "--color-bg-surface",
+    "value": "#ffffff",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.bg.disabled",
+    "cssVar": "--color-bg-disabled",
+    "value": "#ffffff",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.border.default",
+    "cssVar": "--color-border-default",
+    "value": "#0f65ef",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.border.subtle",
+    "cssVar": "--color-border-subtle",
+    "value": "#d7d7d7",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.border.disabled",
+    "cssVar": "--color-border-disabled",
+    "value": "#aaaaaa",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.feedback.danger",
+    "cssVar": "--color-feedback-danger",
+    "value": "#ee3322",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.feedback.danger-hover",
+    "cssVar": "--color-feedback-danger-hover",
+    "value": "#b81a21",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.feedback.success",
+    "cssVar": "--color-feedback-success",
+    "value": "#68af15",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.feedback.success-hover",
+    "cssVar": "--color-feedback-success-hover",
+    "value": "#618910",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "color.feedback.warning",
+    "cssVar": "--color-feedback-warning",
+    "value": "#f47f16",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "radius.100",
+    "cssVar": "--radius-100",
+    "value": "2px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "radius.200",
+    "cssVar": "--radius-200",
+    "value": "4px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "radius.300",
+    "cssVar": "--radius-300",
+    "value": "8px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "radius.full",
+    "cssVar": "--radius-full",
+    "value": "9999px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "radius.control",
+    "cssVar": "--radius-control",
+    "value": "4px",
+    "tier": "semantic",
+    "type": "dimension"
+  },
+  {
+    "id": "radius.pill",
+    "cssVar": "--radius-pill",
+    "value": "9999px",
+    "tier": "semantic",
+    "type": "dimension"
+  },
+  {
+    "id": "space.100",
+    "cssVar": "--space-100",
+    "value": "4px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "space.200",
+    "cssVar": "--space-200",
+    "value": "8px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "space.300",
+    "cssVar": "--space-300",
+    "value": "12px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "space.400",
+    "cssVar": "--space-400",
+    "value": "16px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "font.size.300",
+    "cssVar": "--font-size-300",
+    "value": "15px",
+    "tier": "primitive",
+    "type": "dimension"
+  },
+  {
+    "id": "font.weight.regular",
+    "cssVar": "--font-weight-regular",
+    "value": "400",
+    "tier": "primitive",
+    "type": "fontWeight"
+  },
+  {
+    "id": "font.weight.semibold",
+    "cssVar": "--font-weight-semibold",
+    "value": "600",
+    "tier": "primitive",
+    "type": "fontWeight"
+  },
+  {
+    "id": "button.radius",
+    "cssVar": "--button-radius",
+    "value": "4px",
+    "tier": "component",
+    "type": "dimension"
+  },
+  {
+    "id": "button.primary.bg.default",
+    "cssVar": "--button-primary-bg-default",
+    "value": "#0f65ef",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.bg.hover",
+    "cssVar": "--button-primary-bg-hover",
+    "value": "#083884",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.bg.disabled",
+    "cssVar": "--button-primary-bg-disabled",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.text.default",
+    "cssVar": "--button-primary-text-default",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.text.hover",
+    "cssVar": "--button-primary-text-hover",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.text.disabled",
+    "cssVar": "--button-primary-text-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.border.default",
+    "cssVar": "--button-primary-border-default",
+    "value": "#0f65ef",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.border.hover",
+    "cssVar": "--button-primary-border-hover",
+    "value": "#083884",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.primary.border.disabled",
+    "cssVar": "--button-primary-border-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.bg.default",
+    "cssVar": "--button-danger-bg-default",
+    "value": "#ee3322",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.bg.hover",
+    "cssVar": "--button-danger-bg-hover",
+    "value": "#b81a21",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.bg.disabled",
+    "cssVar": "--button-danger-bg-disabled",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.text.default",
+    "cssVar": "--button-danger-text-default",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.text.hover",
+    "cssVar": "--button-danger-text-hover",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.text.disabled",
+    "cssVar": "--button-danger-text-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.border.default",
+    "cssVar": "--button-danger-border-default",
+    "value": "#ee3322",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.border.hover",
+    "cssVar": "--button-danger-border-hover",
+    "value": "#b81a21",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.danger.border.disabled",
+    "cssVar": "--button-danger-border-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.bg.default",
+    "cssVar": "--button-success-bg-default",
+    "value": "#68af15",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.bg.hover",
+    "cssVar": "--button-success-bg-hover",
+    "value": "#618910",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.bg.disabled",
+    "cssVar": "--button-success-bg-disabled",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.text.default",
+    "cssVar": "--button-success-text-default",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.text.hover",
+    "cssVar": "--button-success-text-hover",
+    "value": "#ffffff",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.text.disabled",
+    "cssVar": "--button-success-text-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.border.default",
+    "cssVar": "--button-success-border-default",
+    "value": "#68af15",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.border.hover",
+    "cssVar": "--button-success-border-hover",
+    "value": "#618910",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.success.border.disabled",
+    "cssVar": "--button-success-border-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.bg.default",
+    "cssVar": "--button-outline-bg-default",
+    "value": "rgba(0, 0, 0, 0)",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.bg.hover",
+    "cssVar": "--button-outline-bg-hover",
+    "value": "rgba(0, 0, 0, 0)",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.bg.disabled",
+    "cssVar": "--button-outline-bg-disabled",
+    "value": "rgba(0, 0, 0, 0)",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.text.default",
+    "cssVar": "--button-outline-text-default",
+    "value": "#0f65ef",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.text.hover",
+    "cssVar": "--button-outline-text-hover",
+    "value": "#083884",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.text.disabled",
+    "cssVar": "--button-outline-text-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.border.default",
+    "cssVar": "--button-outline-border-default",
+    "value": "#0f65ef",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.border.hover",
+    "cssVar": "--button-outline-border-hover",
+    "value": "#083884",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "button.outline.border.disabled",
+    "cssVar": "--button-outline-border-disabled",
+    "value": "#aaaaaa",
+    "tier": "component",
+    "type": "color"
+  },
+  {
+    "id": "bs.primary",
+    "cssVar": "--bs-primary",
+    "value": "#2f5c9e",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.primary-rgb",
+    "cssVar": "--bs-primary-rgb",
+    "value": "47, 92, 158",
+    "tier": "semantic",
+    "type": "other"
+  },
+  {
+    "id": "bs.secondary",
+    "cssVar": "--bs-secondary",
+    "value": "#667085",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.body-bg",
+    "cssVar": "--bs-body-bg",
+    "value": "#ffffff",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.body-color",
+    "cssVar": "--bs-body-color",
+    "value": "#22252a",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.secondary-color",
+    "cssVar": "--bs-secondary-color",
+    "value": "#667085",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.tertiary-bg",
+    "cssVar": "--bs-tertiary-bg",
+    "value": "#f2f5fa",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.border-color",
+    "cssVar": "--bs-border-color",
+    "value": "#dde3ec",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.link-color",
+    "cssVar": "--bs-link-color",
+    "value": "#2f5c9e",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.link-hover-color",
+    "cssVar": "--bs-link-hover-color",
+    "value": "#244a80",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.danger",
+    "cssVar": "--bs-danger",
+    "value": "#dc3545",
+    "tier": "semantic",
+    "type": "color"
+  },
+  {
+    "id": "bs.border-radius",
+    "cssVar": "--bs-border-radius",
+    "value": "0.5rem",
+    "tier": "semantic",
+    "type": "dimension"
+  },
+  {
+    "id": "bs.body-font-size",
+    "cssVar": "--bs-body-font-size",
+    "value": "1rem",
+    "tier": "semantic",
+    "type": "dimension"
+  },
+  {
+    "id": "bs.font-sans-serif",
+    "cssVar": "--bs-font-sans-serif",
+    "value": "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif",
+    "tier": "semantic",
+    "type": "fontFamily"
+  }
+]

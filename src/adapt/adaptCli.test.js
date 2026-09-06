@@ -12,7 +12,7 @@ import { globFiles } from './glob.js'
 const here = dirname(fileURLToPath(import.meta.url))
 const fixtureSrc = readFileSync(join(here, '__fixtures__', 'Button.legacy.jsx'), 'utf-8')
 const resolvedSrc = readFileSync(
-  join(here, '..', '..', '..', 'sorb-demo', '.sorb', 'resolved.json'), 'utf-8',
+  join(here, '__fixtures__', 'sorb-demo.resolved.json'), 'utf-8',
 )
 
 test('parseAdaptArgs: defaults + flag forms (space and =)', () => {
